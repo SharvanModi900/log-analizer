@@ -30,8 +30,8 @@ def parse_log_file(filepath):
 
         # Fallback: last line’s first word
         if buffer:
-            print("==========finalizing test==========", name)
-            print(buffer)
+            # print("==========finalizing test==========", name)
+            # print(buffer)
             for sentence in buffer[::-1]:
                 if sentence != '':
                     last_word = sentence.split()[0][:10]
