@@ -31,7 +31,7 @@ repo-root/
 │   │   ├── module_name_status.log/json   # Contains .log and .json files
 │   ├── main.py                           # Entry point for analysis
 │   ├── utils.py                          # Utility functions (coloring, helpers)
-│   ├── log_parser.py                     # Log parsing logic
+│   ├── log_parser.py                    # Log parsing logic
 ├── python/                               # (reserved for Python test harnesses)
 ├── README.md                             # You are here
 ├── requirements.txt                      # Python dependencies
@@ -51,17 +51,17 @@ cd log-analyzer/rust
 
 2. **Create and activate a virtual environment**
 
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate   # On macOS/Linux
-   venv\Scripts\activate      # On Windows
-   ```
+```bash
+python3 -m venv venv
+source venv/bin/activate   # On macOS/Linux
+venv\Scripts\activate      # On Windows
+```
 
 3. **Install dependencies**
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+pip install -r requirements.txt
+```
    
 Dependencies:
 	- `colorama` -> colored terminal output
@@ -100,7 +100,7 @@ Example JSON:
 2. **Run the analyzer**
 
 ```bash
-python main.py
+python3 main.py
 ```
 
 3. **View results**
