@@ -42,23 +42,27 @@ def parse_log_file(filepath):
             match = test_line_pattern.match(line)
             if match:
                 test_name, inline_status = match.groups()
+                # print("==========for test==========", filepath)
+                # print(test_name)
+                # print(inline_status)
 
                 # Finalize previous if active
                 if current_test:
                     result = finalize_test(current_test, buffer_lines, first_token_after_dots)
                     if result:
                         results[current_test] = result
-                # Reset state
+                    else:
+                        results[current_test] = "no_result"
                 current_test, buffer_lines, first_token_after_dots = None, [], None
 
-                if inline_status:  # inline PASS/FAIL/custom
-                    if inline_status == "ok":
-                        results[test_name] = "PASS"
-                    elif inline_status == "FAILED":
-                        results[test_name] = "FAIL"
-                    else:
-                        results[test_name] = inline_status[:10]
-                else:  # deferred
+                # inline PASS/FAIL
+                if inline_status == "ok":
+                    results[test_name] = "PASS"
+                elif inline_status == "FAILED":
+                    results[test_name] = "FAIL"
+                else:
+                    if inline_status:
+                        first_token_after_dots = inline_status
                     current_test = test_name
                 continue
 

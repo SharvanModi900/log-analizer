@@ -6,16 +6,21 @@ def colorize_status(status):
     """
     Colorize PASS/FAIL/ERROR/ABSENT and arbitrary custom statuses.
     """
-    if status == "PASS":
-        return Fore.GREEN + status + Style.RESET_ALL
-    elif status == "FAIL":
-        return Fore.RED + status + Style.RESET_ALL
-    elif status == "ERROR":
-        return Fore.MAGENTA + status + Style.RESET_ALL
-    elif status == "ABSENT":
-        return Fore.YELLOW + status + Style.RESET_ALL
+    if len(status.split()) == 1:
+        pre_status = status
+        post_status = ""
     else:
-        # Any custom result (e.g., "req", "timeout", etc.)
+        pre_status, post_status = status.split()
+
+    if pre_status == "PASS":
+        return Fore.GREEN + pre_status + Fore.BLUE + " " + post_status + Style.RESET_ALL
+    elif pre_status == "FAIL":
+        return Fore.RED + pre_status + Fore.BLUE + " " + post_status + Style.RESET_ALL
+    elif pre_status == "ERROR":
+        return Fore.MAGENTA + pre_status + Fore.BLUE + " " + post_status + Style.RESET_ALL
+    elif pre_status == "ABSENT":
+        return Fore.YELLOW + pre_status + Fore.BLUE + " " + post_status + Style.RESET_ALL
+    else:
         return Fore.BLUE + status + Style.RESET_ALL
 
 def get_status(test_name, log_results):
