@@ -7,13 +7,15 @@ def colorize_status(status):
         return Fore.GREEN + status + Style.RESET_ALL
     elif status == "FAIL":
         return Fore.RED + status + Style.RESET_ALL
+    elif status == "ERROR":
+        return Fore.MAGENTA + status + Style.RESET_ALL
     elif status == "ABSENT":
         return Fore.YELLOW + status + Style.RESET_ALL
     return status
 
 def get_status(test_name, log_results):
     """
-    Determine if test_name is PASS, FAIL, or ABSENT in given log results.
+    Determine if test_name is PASS, FAIL, ERROR or ABSENT in given log results.
     """
     return log_results.get(test_name, "ABSENT")
 
