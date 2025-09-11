@@ -135,9 +135,9 @@ Note: 1 out of 2 pass_to_pass tests passed in all 3 commits and were not display
 - Only one `.json` file and one set of `*_base.log`, `*_before.log`, `*_after.log` are expected in `logs/log_files/` at a time.
 - Tests that **always PASS** in all commits are summarized at the end, not shown in the main table.
 - Output coloring:
-	- ✅ **PASS** → Green
-	- ❌ **FAIL** → Red
-	- ⚠️ **ABSENT** → Yellow
+	- ✅ **PASS**   -> Green
+	- ❌ **FAIL**   -> Red
+	- ⚠️  **ABSENT** -> Yellow
 
 ---
 
