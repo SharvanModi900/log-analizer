@@ -30,8 +30,12 @@ def parse_log_file(filepath):
 
         # Fallback: last line’s first word
         if buffer:
-            last_word = buffer[-1].split()[0][:10]
-            return "{} ({})".format(last_word, first_token[:10]) if first_token else last_word
+            print("==========finalizing test==========", name)
+            print(buffer)
+            for sentence in buffer[::-1]:
+                if sentence != '':
+                    last_word = sentence.split()[0][:10]
+                    return "{} ({})".format(last_word, first_token[:10]) if first_token else last_word
         return None
 
     with open(filepath, "r", encoding="utf-8") as f:
@@ -51,8 +55,10 @@ def parse_log_file(filepath):
                     result = finalize_test(current_test, buffer_lines, first_token_after_dots)
                     if result:
                         results[current_test] = result
+                    elif first_token_after_dots:
+                        results[current_test] = first_token_after_dots[:10]
                     else:
-                        results[current_test] = "no_result"
+                        results[current_test] = "UNKNOWN"
                 current_test, buffer_lines, first_token_after_dots = None, [], None
 
                 # inline PASS/FAIL
