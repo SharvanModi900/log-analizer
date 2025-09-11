@@ -31,7 +31,7 @@ repo-root/
 │   │   ├── module_name_status.log/json   # Contains .log and .json files
 │   ├── main.py                           # Entry point for analysis
 │   ├── utils.py                          # Utility functions (coloring, helpers)
-│   ├── log\_parser.py                    # Log parsing logic
+│   ├── log_parser.py                     # Log parsing logic
 ├── python/                               # (reserved for Python test harnesses)
 ├── README.md                             # You are here
 ├── requirements.txt                      # Python dependencies
