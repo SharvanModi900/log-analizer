@@ -1,5 +1,84 @@
 # Rust Test Log Analyzer
 
+A desktop application built with Electron and Python to analyze Rust test logs across different commit states.
+
+## Features
+
+- Upload ZIP files containing Rust test logs
+- Automatic analysis of test results across three states:
+  - Base (no patches)
+  - Before (test patch applied)
+  - After (test patch + gold patch applied)
+- Validation checks for specific test conditions
+- Visual display of failing tests and their categories
+- User-friendly interface with clear results presentation
+
+## Requirements
+
+- Node.js (v14 or higher)
+- Python (v3.6 or higher)
+- npm (comes with Node.js)
+
+## Installation
+
+1. Clone or download this repository
+2. Navigate to the project directory:
+   ```
+   cd log-analyzer
+   ```
+3. Install Node.js dependencies:
+   ```
+   npm install
+   ```
+4. Install Python dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+
+## Usage
+
+1. Start the application:
+   ```
+   npm start
+   ```
+2. Click "Select ZIP File" to upload your log files
+3. The application will automatically analyze the logs and display results
+
+## ZIP File Structure
+
+The ZIP file should contain the following files:
+- `_base.log` - Base test results
+- `_before.log` - Before patch test results
+- `_after.log` - After patch test results
+- `.json` - Test definitions (containing fail_to_pass and pass_to_pass arrays)
+
+## Validation Checks
+
+The application performs the following validation checks:
+1. At least one failed test in base is present in P2P
+2. At least one failed test in after is present in F2P / P2P
+3. At least one F2P test is present and successful in before
+4. At least one P2P, that is missing in base, is not passing in before
+
+## Development
+
+To modify the application:
+
+1. Update the Electron frontend in the `electron/` directory
+2. Modify the Python analysis logic in `electron/log_analyzer.py`
+3. The core log parsing logic is in `rust/log_parser.py`
+
+## Building
+
+To build the application for distribution:
+```
+npm run build
+```
+
+## License
+
+MIT
+
 ## Table of Contents
 - [Project Structure](#project-structure)
 - [Setup Instructions](#setup-instructions)

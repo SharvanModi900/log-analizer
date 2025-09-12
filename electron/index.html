@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com; style-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com;">
+    <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com; style-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com;">
+    <title>Rust Test Log Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="tailwind.config.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+        }
+        
+        .card-gradient {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        }
+        
+        .upload-gradient {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+        
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .hover-lift {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .hover-lift:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.7);
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+        }
+        
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+        
+        .file-upload-area {
+            transition: all 0.3s ease;
+        }
+        
+        .file-upload-area.drag-over {
+            border-color: #9521f7;
+            background-color: rgba(149, 33, 247, 0.05);
+            transform: scale(1.02);
+        }
+        
+        .file-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen flex items-center justify-center p-4">
+    <div class="container mx-auto max-w-6xl bg-white rounded-2xl shadow-xl p-8 animate-fade-in">
+        <header class="text-center mb-12 pb-6 border-b border-gray-200">
+            <h1 class="text-4xl font-bold text-primary-700 mb-3">Rust Test Log Analyzer</h1>
+            <p class="text-gray-600 text-lg max-w-2xl mx-auto">Analyze your Rust test logs with our comprehensive tool</p>
+        </header>
+        
+        <div class="upload-section" id="uploadSection">
+            <div class="grid grid-cols-1 gap-8 mb-8">
+                <!-- Multiple File Upload -->
+                <div class="file-upload-area upload-gradient border-2 border-dashed border-primary-300 rounded-2xl p-8 text-center hover-lift relative overflow-hidden" id="filesUploadArea">
+                    <div class="absolute inset-0 bg-gradient-to-br from-primary-100 to-secondary-100 opacity-20"></div>
+                    <div class="relative">
+                        <div class="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-file-upload text-primary-600 text-2xl"></i>
+                        </div>
+                        <h2 class="text-2xl font-semibold text-primary-700 mb-3 relative">Upload Files</h2>
+                        <p class="text-gray-600 mb-4 relative">Select or drag and drop your files here</p>
+                        <p class="text-gray-500 text-sm mb-4 relative">Supported files: JSON, _base.log, _before.log, _after.log</p>
+                        <button class="upload-btn bg-gradient-to-r from-primary-600 to-primary-800 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:from-primary-700 hover:to-primary-900 transition-all duration-300 transform hover:scale-105 relative overflow-hidden mb-4" id="uploadFilesBtn">
+                            <i class="fas fa-folder-open mr-2"></i>Select Files
+                        </button>
+                        <input type="file" id="fileInput" multiple class="hidden" accept=".json,.log">
+                        <div class="file-info bg-primary-50 border border-primary-200 rounded-lg p-3 text-sm relative" id="filesInfo">
+                            <p class="text-gray-700"><i class="fas fa-info-circle text-primary-500 mr-2"></i>No files selected</p>
+                        </div>
+                        <div class="file-list mt-4 hidden" id="fileList"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-8">
+                <button class="analyze-btn bg-gradient-to-r from-green-600 to-green-800 text-white font-semibold py-4 px-10 rounded-full shadow-lg hover:from-green-700 hover:to-green-900 transition-all duration-300 transform hover:scale-105 relative overflow-hidden text-lg" id="analyzeBtn" disabled>
+                    <i class="fas fa-cogs mr-2"></i>Analyze Files
+                </button>
+            </div>
+            
+            <div class="file-info mt-8 p-6 bg-blue-50 border-l-4 border-blue-500 rounded-lg text-left">
+                <h3 class="font-semibold text-blue-800 mb-2"><i class="fas fa-info-circle mr-2"></i>How to use this tool:</h3>
+                <ol class="list-decimal pl-5 space-y-2 text-blue-700">
+                    <li>Upload all required files: JSON file and the three log files (_base.log, _before.log, _after.log)</li>
+                    <li>Click "Analyze Files" to process your logs</li>
+                </ol>
+            </div>
+        </div>
+        
+        <div class="loading text-center py-16 hidden" id="loadingSection">
+            <div class="spinner w-16 h-16 border-4 border-gray-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-6"></div>
+            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Analyzing Logs</h2>
+            <p class="text-gray-600">Please wait while we process your log files...</p>
+        </div>
+        
+        <div class="error bg-red-50 border-l-4 border-red-500 rounded-lg p-6 mb-8 hidden" id="errorSection">
+            <h3 class="text-xl font-semibold text-red-700 mb-2"><i class="fas fa-exclamation-circle mr-2"></i>Error</h3>
+            <p class="text-red-600 mb-4" id="errorMessage"></p>
+            <button class="back-btn bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-6 rounded-full transition duration-300" id="backBtn">Try Again</button>
+        </div>
+        
+        <div class="results-section hidden" id="resultsSection">
+            <button class="back-btn bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-6 rounded-full transition duration-300 mb-8" id="resultsBackBtn">
+                <i class="fas fa-arrow-left mr-2"></i>Analyze New Files
+            </button>
+            
+            <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Analysis Results</h2>
+            
+            <div class="summary-cards grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12" id="summaryCards"></div>
+            
+            <div class="validation-results mb-12">
+                <h3 class="text-2xl font-semibold text-gray-800 mb-6 pb-2 border-b border-gray-200">Validation Checks</h3>
+                <div id="validationResults"></div>
+            </div>
+            
+            <div class="failing-tests mb-12">
+                <h3 class="text-2xl font-semibold text-gray-800 mb-6 pb-2 border-b border-gray-200">Failing Tests Across All States</h3>
+                <div id="failingTestsTable"></div>
+            </div>
+            
+            <div class="fail-to-pass mb-12">
+                <h3 class="text-2xl font-semibold text-gray-800 mb-6 pb-2 border-b border-gray-200">Fail to Pass Tests</h3>
+                <div id="failToPassTable"></div>
+            </div>
+            
+            <div class="pass-to-pass">
+                <h3 class="text-2xl font-semibold text-gray-800 mb-6 pb-2 border-b border-gray-200">Pass to Pass Tests</h3>
+                <div id="passToPassTable"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>
