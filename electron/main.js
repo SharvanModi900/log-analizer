@@ -46,7 +46,7 @@ const createWindow = () => {
     // Add rounded corners and shadow
     hasShadow: true,
     transparent: false,
-    backgroundColor: '#ffffff'
+    backgroundColor: '#0f172a'
   });
 
   // and load the index.html of the app.

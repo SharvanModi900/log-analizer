@@ -11,6 +11,9 @@ const Logger = {
     }
 };
 
+// Store recent analyses
+let recentAnalyses = [];
+
 document.addEventListener('DOMContentLoaded', () => {
     Logger.log('DOM content loaded, initializing application');
     
@@ -28,6 +31,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const summaryCards = document.getElementById('summaryCards');
     const analysisDashboard = document.getElementById('analysisDashboard');
     const analyzeAnotherBtn = document.getElementById('analyzeAnotherBtn');
+    const instructionsSection = document.getElementById('instructionsSection');
+    
+    // Full screen elements
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const fullScreenDashboard = document.getElementById('fullScreenDashboard');
+    const closeFullscreenBtn = document.getElementById('closeFullscreenBtn');
+    const analyzeAnotherBtnFullscreen = document.getElementById('analyzeAnotherBtnFullscreen');
+    
+    // Sidebar tab elements
+    const sidebarTabs = document.querySelectorAll('.sidebar .tab');
+    const sidebarTabContents = document.querySelectorAll('.sidebar .tab-content');
+    
+    // Recent analyses elements
+    const recentAnalysesSidebar = document.getElementById('recentAnalysesSidebar');
+    const noRecentAnalysesMessage = document.getElementById('noRecentAnalysesMessage');
+    const recentAnalysesTableContainer = document.getElementById('recentAnalysesTableContainer');
+    const recentAnalysesSidebarTableBody = document.getElementById('recentAnalysesSidebarTableBody');
 
     // Track uploaded files
     let uploadedFiles = {
@@ -38,6 +58,40 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     Logger.log('UI elements initialized');
+    
+    // Add a small CSS fix to ensure analysis dashboard visibility
+    const style = document.createElement('style');
+    style.textContent = `
+        #analysisDashboard:not(.hidden) {
+            display: block !important;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Add professional animations to elements
+    function addProfessionalAnimations() {
+        // Add floating animation to all stat cards
+        const statCards = document.querySelectorAll('.stat-card');
+        statCards.forEach((card, index) => {
+            // Remove any existing animation classes
+            card.classList.remove('floating');
+            // Add with a slight delay for staggered effect
+            setTimeout(() => {
+                card.classList.add('floating');
+            }, index * 100);
+        });
+
+        // Add pulse animation to buttons on hover
+        const buttons = document.querySelectorAll('.btn');
+        buttons.forEach(button => {
+            button.addEventListener('mouseenter', () => {
+                button.classList.add('pulse');
+            });
+            button.addEventListener('mouseleave', () => {
+                button.classList.remove('pulse');
+            });
+        });
+    }
 
     // Update file info display
     function updateFileInfo() {
@@ -59,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (uploadedFiles.json) {
                 fileListHTML += `
-                    <div class="file-item">
+                    <div class="file-item smooth-transition">
                         <i class="fas fa-file-code file-icon text-blue-500"></i>
                         <span class="file-name">${uploadedFiles.json.name}</span>
                         <i class="fas fa-check-circle text-green-500"></i>
@@ -69,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (uploadedFiles.base) {
                 fileListHTML += `
-                    <div class="file-item">
+                    <div class="file-item smooth-transition">
                         <i class="fas fa-file-alt file-icon text-blue-500"></i>
                         <span class="file-name">${uploadedFiles.base.name}</span>
                         <i class="fas fa-check-circle text-green-500"></i>
@@ -79,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (uploadedFiles.before) {
                 fileListHTML += `
-                    <div class="file-item">
+                    <div class="file-item smooth-transition">
                         <i class="fas fa-file-alt file-icon text-blue-500"></i>
                         <span class="file-name">${uploadedFiles.before.name}</span>
                         <i class="fas fa-check-circle text-green-500"></i>
@@ -89,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (uploadedFiles.after) {
                 fileListHTML += `
-                    <div class="file-item">
+                    <div class="file-item smooth-transition">
                         <i class="fas fa-file-alt file-icon text-red-500"></i>
                         <span class="file-name">${uploadedFiles.after.name}</span>
                         <i class="fas fa-check-circle text-green-500"></i>
@@ -104,6 +158,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (uploadedFiles.json && uploadedFiles.base && uploadedFiles.before && uploadedFiles.after) {
                 analyzeBtn.classList.remove('hidden');
                 analyzeBtn.disabled = false;
+                // Add animation to analyze button
+                setTimeout(() => {
+                    analyzeBtn.classList.add('pulse');
+                }, 300);
                 Logger.log('All files selected, showing analyze button');
             } else {
                 analyzeBtn.classList.add('hidden');
@@ -119,9 +177,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Reset UI to initial state
     function resetToInitialState() {
-        // Hide analysis dashboard and show upload area
+        // Hide analysis dashboard and show upload section
         analysisDashboard.classList.add('hidden');
-        filesUploadArea.classList.remove('hidden');
+        // Find the upload section and show it
+        const uploadSection = document.querySelector('.section:not(#analysisDashboard)');
+        if (uploadSection) {
+            uploadSection.classList.remove('hidden');
+        }
+        
+        // Show instructions section again when resetting
+        const instructionsSection = document.getElementById('instructionsSection');
+        if (instructionsSection) {
+            instructionsSection.classList.remove('hidden');
+        }
+        
+        // Switch to instructions tab in sidebar
+        // Hide all sidebar tab contents
+        sidebarTabContents.forEach(content => {
+            content.classList.remove('active');
+        });
+        
+        // Remove active class from all sidebar tabs
+        sidebarTabs.forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Show instructions tab content
+        const instructionsTabContent = document.getElementById('instructionsTab');
+        if (instructionsTabContent) {
+            instructionsTabContent.classList.add('active');
+        }
+        
+        // Add active class to instructions tab
+        const instructionsTab = document.querySelector('.sidebar .tab[data-tab="instructions"]');
+        if (instructionsTab) {
+            instructionsTab.classList.add('active');
+        }
         
         // Reset file info
         uploadedFiles = {
@@ -132,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         updateFileInfo();
         
-        // Reset summary cards to default values
+        // Reset summary cards to default values with animation
         const cards = summaryCards.querySelectorAll('.stat-card');
         if (cards.length >= 6) {
             cards[0].querySelector('.stat-value').textContent = '0';
@@ -181,12 +272,206 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('#passToPassTable tbody').innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">No data available. Upload files and analyze to see results.</td></tr>';
     }
 
+    // Toggle full screen mode
+    function toggleFullScreen() {
+        fullScreenDashboard.classList.toggle('active');
+        
+        // Copy current analysis data to full screen view
+        if (fullScreenDashboard.classList.contains('active')) {
+            // Copy summary cards
+            const currentCards = summaryCards.querySelectorAll('.stat-card');
+            const fullscreenCards = document.querySelectorAll('#summaryCardsFullscreen .stat-card');
+            fullscreenCards.forEach((card, index) => {
+                if (currentCards[index]) {
+                    const currentValue = currentCards[index].querySelector('.stat-value').textContent;
+                    card.querySelector('.stat-value').textContent = currentValue;
+                }
+            });
+            
+            // Copy validation results
+            const currentValidation = validationResults.innerHTML;
+            document.getElementById('validationResultsFullscreen').innerHTML = currentValidation;
+            
+            // Copy table data
+            document.getElementById('failingTestsTableFullscreen').querySelector('tbody').innerHTML = 
+                document.getElementById('failingTestsTable').querySelector('tbody').innerHTML;
+            document.getElementById('failToPassTableFullscreen').querySelector('tbody').innerHTML = 
+                document.getElementById('failToPassTable').querySelector('tbody').innerHTML;
+            document.getElementById('passToPassTableFullscreen').querySelector('tbody').innerHTML = 
+                document.getElementById('passToPassTable').querySelector('tbody').innerHTML;
+        }
+    }
+
+    // Save analysis to recent analyses
+    function saveToRecentAnalyses(analysisData) {
+        Logger.log('Saving analysis to recent analyses');
+        const analysis = {
+            id: Date.now(),
+            timestamp: new Date().toLocaleString(),
+            files: Object.values(uploadedFiles).filter(file => file !== null).map(file => file.name),
+            data: analysisData
+        };
+        
+        recentAnalyses.unshift(analysis);
+        // Keep only the last 10 analyses
+        if (recentAnalyses.length > 10) {
+            recentAnalyses = recentAnalyses.slice(0, 10);
+        }
+        
+        Logger.log(`Saved analysis. Recent analyses count: ${recentAnalyses.length}`);
+        updateRecentAnalysesDisplay();
+    }
+
+    // Update recent analyses display
+    function updateRecentAnalysesDisplay() {
+        Logger.log(`Updating recent analyses display. Recent analyses count: ${recentAnalyses.length}`);
+        // Update sidebar display
+        if (recentAnalyses.length === 0) {
+            Logger.log('No recent analyses, hiding recent analyses component');
+            // Show the "no recent analyses" message
+            const noRecentMessage = document.getElementById('noRecentAnalysesMessage');
+            if (noRecentMessage) {
+                noRecentMessage.classList.remove('hidden');
+            }
+            
+            // Hide the table container
+            const tableContainer = document.getElementById('recentAnalysesTableContainer');
+            if (tableContainer) {
+                tableContainer.classList.add('hidden');
+            }
+        } else {
+            Logger.log('There are recent analyses, showing recent analyses component');
+            // Hide the "no recent analyses" message
+            const noRecentMessage = document.getElementById('noRecentAnalysesMessage');
+            if (noRecentMessage) {
+                noRecentMessage.classList.add('hidden');
+            }
+            
+            // Show the table container
+            const tableContainer = document.getElementById('recentAnalysesTableContainer');
+            if (tableContainer) {
+                tableContainer.classList.remove('hidden');
+            }
+            
+            let tableHTML = '';
+            recentAnalyses.forEach(analysis => {
+                const files = analysis.files.join(', ');
+                const date = analysis.timestamp;
+                
+                tableHTML += `
+                    <tr>
+                        <td>${date}</td>
+                        <td>${files}</td>
+                        <td>
+                            <button class="btn btn-secondary btn-sm load-analysis-sidebar" data-id="${analysis.id}">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            const tableBody = document.getElementById('recentAnalysesSidebarTableBody');
+            if (tableBody) {
+                tableBody.innerHTML = tableHTML;
+            }
+            
+            // Add event listeners to load buttons
+            document.querySelectorAll('.load-analysis-sidebar').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const id = parseInt(e.target.closest('.load-analysis-sidebar').getAttribute('data-id'));
+                    loadAnalysis(id);
+                });
+            });
+        }
+        
+        // Update recent analyses table in fullscreen view
+        updateRecentAnalysesTable();
+    }
+
+    // Update recent analyses table
+    function updateRecentAnalysesTable() {
+        const fullscreenTableBody = document.querySelector('#recentAnalysesTableFullscreen tbody');
+        
+        if (recentAnalyses.length === 0) {
+            const noDataHTML = '<tr><td colspan="6" class="text-center text-gray-500">No recent analyses found.</td></tr>';
+            fullscreenTableBody.innerHTML = noDataHTML;
+        } else {
+            let tableHTML = '';
+            recentAnalyses.forEach(analysis => {
+                const files = analysis.files.join(', ');
+                const baseFailures = analysis.data.summary.baseFailCount || 0;
+                const beforeFailures = analysis.data.summary.beforeFailCount || 0;
+                const afterFailures = analysis.data.summary.afterFailCount || 0;
+                
+                tableHTML += `
+                    <tr>
+                        <td>${analysis.timestamp}</td>
+                        <td>${files}</td>
+                        <td>${baseFailures}</td>
+                        <td>${beforeFailures}</td>
+                        <td>${afterFailures}</td>
+                        <td>
+                            <button class="btn btn-secondary btn-sm load-analysis" data-id="${analysis.id}">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            fullscreenTableBody.innerHTML = tableHTML;
+            
+            // Add event listeners to load buttons
+            document.querySelectorAll('.load-analysis').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const id = parseInt(e.target.closest('.load-analysis').getAttribute('data-id'));
+                    loadAnalysis(id);
+                });
+            });
+        }
+    }
+
+    // Load analysis from recent analyses
+    function loadAnalysis(id) {
+        const analysis = recentAnalyses.find(a => a.id === id);
+        if (analysis) {
+            // Hide upload section and show analysis dashboard
+            const uploadSection = document.querySelector('.section:not(#analysisDashboard)');
+            if (uploadSection) {
+                uploadSection.classList.add('hidden');
+            }
+            analysisDashboard.classList.remove('hidden');
+            analysisDashboard.style.display = 'block';
+            
+            // Hide instructions section when loading analysis
+            const instructionsSection = document.getElementById('instructionsSection');
+            if (instructionsSection) {
+                instructionsSection.classList.add('hidden');
+            }
+            
+            // Display the analysis data
+            displayResults(analysis.data);
+            
+            // Add professional animations
+            addProfessionalAnimations();
+        }
+    }
+
     // File upload button click
     uploadFilesBtn.addEventListener('click', async () => {
         Logger.log('File upload button clicked');
         try {
+            // Add animation to button
+            uploadFilesBtn.classList.add('pulse');
+            setTimeout(() => {
+                uploadFilesBtn.classList.remove('pulse');
+            }, 500);
+            
             // Call the selectFiles API directly
             const result = await window.electronAPI.selectFiles();
+            
+            Logger.log(`File selection result: ${JSON.stringify(result)}`);
             
             if (result.success) {
                 Logger.log(`Files selected: ${Object.keys(result.files).length} files identified`);
@@ -232,6 +517,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
                 }
                 
+                Logger.log(`After processing API result, uploadedFiles: JSON=${!!uploadedFiles.json}, Base=${!!uploadedFiles.base}, Before=${!!uploadedFiles.before}, After=${!!uploadedFiles.after}`);
+                
                 updateFileInfo();
             } else {
                 Logger.error(`Failed to select files: ${result.error || 'Unknown error'}`);
@@ -246,25 +533,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle drag and drop events
     filesUploadArea.addEventListener('dragover', (event) => {
         event.preventDefault();
-        filesUploadArea.classList.add('border-primary');
+        filesUploadArea.classList.add('border-primary', 'glow');
         filesUploadArea.classList.remove('border-gray-300');
     });
 
     filesUploadArea.addEventListener('dragleave', () => {
-        filesUploadArea.classList.remove('border-primary');
+        filesUploadArea.classList.remove('border-primary', 'glow');
         filesUploadArea.classList.add('border-gray-300');
     });
 
     filesUploadArea.addEventListener('drop', async (event) => {
         event.preventDefault();
-        filesUploadArea.classList.remove('border-primary');
+        filesUploadArea.classList.remove('border-primary', 'glow');
         filesUploadArea.classList.add('border-gray-300');
         
         Logger.log('Files dropped into upload area');
         const files = Array.from(event.dataTransfer.files);
         
-        // Reset uploaded files
-        uploadedFiles = {
+        Logger.log(`Number of files dropped: ${files.length}`);
+        
+        // Process dropped files
+        let newUploadedFiles = {
             json: null,
             base: null,
             before: null,
@@ -275,6 +564,76 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const file of files) {
             const fileName = file.name.toLowerCase();
             Logger.log(`Processing dropped file: ${fileName}`);
+            
+            if (fileName.endsWith('.json')) {
+                newUploadedFiles.json = {
+                    name: file.name,
+                    path: file.path || file.name,
+                    size: file.size
+                };
+                Logger.log(`Identified JSON file: ${file.name}`);
+            } else if (fileName.endsWith('_base.log')) {
+                newUploadedFiles.base = {
+                    name: file.name,
+                    path: file.path || file.name,
+                    size: file.size
+                };
+                Logger.log(`Identified Base Log file: ${file.name}`);
+            } else if (fileName.endsWith('_before.log')) {
+                newUploadedFiles.before = {
+                    name: file.name,
+                    path: file.path || file.name,
+                    size: file.size
+                };
+                Logger.log(`Identified Before Log file: ${file.name}`);
+            } else if (fileName.endsWith('_after.log')) {
+                newUploadedFiles.after = {
+                    name: file.name,
+                    path: file.path || file.name,
+                    size: file.size
+                };
+                Logger.log(`Identified After Log file: ${file.name}`);
+            }
+        }
+        
+        Logger.log(`After processing dropped files, newUploadedFiles: JSON=${!!newUploadedFiles.json}, Base=${!!newUploadedFiles.base}, Before=${!!newUploadedFiles.before}, After=${!!newUploadedFiles.after}`);
+        
+        // Check if we have all required files
+        if (!newUploadedFiles.json || !newUploadedFiles.base || !newUploadedFiles.before || !newUploadedFiles.after) {
+            Logger.warn('Not all required files were dropped');
+            showError('Please drop all required files (JSON, _base.log, _before.log, _after.log)');
+            return;
+        }
+        
+        // Only update uploadedFiles if we have all required files
+        uploadedFiles = newUploadedFiles;
+        updateFileInfo();
+    });
+
+    // Handle file selection through file input (for accessibility)
+    fileInput.addEventListener('change', async (event) => {
+        Logger.log('Files selected via file input');
+        // Check if any files were actually selected
+        if (event.target.files.length === 0) {
+            Logger.warn('No files selected in change event');
+            return;
+        }
+        
+        Logger.log(`Number of files selected: ${event.target.files.length}`);
+        
+        // Reset uploaded files
+        uploadedFiles = {
+            json: null,
+            base: null,
+            before: null,
+            after: null
+        };
+        
+        // Process selected files directly from the file input
+        const files = Array.from(event.target.files);
+        for (const file of files) {
+            const fileName = file.name.toLowerCase();
+            Logger.log(`Processing file from input: ${fileName}`);
             
             if (fileName.endsWith('.json')) {
                 uploadedFiles.json = {
@@ -307,10 +666,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
+        Logger.log(`After processing, uploadedFiles: JSON=${!!uploadedFiles.json}, Base=${!!uploadedFiles.base}, Before=${!!uploadedFiles.before}, After=${!!uploadedFiles.after}`);
+        
         // Check if we have all required files
         if (!uploadedFiles.json || !uploadedFiles.base || !uploadedFiles.before || !uploadedFiles.after) {
-            Logger.warn('Not all required files were dropped');
-            showError('Please drop all required files (JSON, _base.log, _before.log, _after.log)');
+            Logger.warn('Not all required files were selected via file input');
+            showError('Please select all required files (JSON, _base.log, _before.log, _after.log)');
             // Reset uploaded files
             uploadedFiles = {
                 json: null,
@@ -323,76 +684,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         updateFileInfo();
+        
+        // Reset the file input value to allow selecting the same files again
+        fileInput.value = '';
     });
 
-    // Handle file selection through file input (for accessibility)
-    fileInput.addEventListener('change', async (event) => {
-        Logger.log('Files selected via file input');
-        // Check if any files were actually selected
-        if (event.target.files.length === 0) {
-            Logger.warn('No files selected in change event');
-            return;
-        }
-        
-        try {
-            // Call the selectFiles API directly instead of processing files here
-            const result = await window.electronAPI.selectFiles();
-            
-            if (result.success) {
-                Logger.log(`Files selected: ${Object.keys(result.files).length} files identified`);
-                
-                // Reset uploaded files
-                uploadedFiles = {
-                    json: null,
-                    base: null,
-                    before: null,
-                    after: null
-                };
-                
-                // Update uploaded files
-                if (result.files.json) {
-                    uploadedFiles.json = {
-                        name: result.files.json.split('\\').pop().split('/').pop(),
-                        path: result.files.json,
-                        size: 0
-                    };
-                }
-                
-                if (result.files.base) {
-                    uploadedFiles.base = {
-                        name: result.files.base.split('\\').pop().split('/').pop(),
-                        path: result.files.base,
-                        size: 0
-                    };
-                }
-                
-                if (result.files.before) {
-                    uploadedFiles.before = {
-                        name: result.files.before.split('\\').pop().split('/').pop(),
-                        path: result.files.before,
-                        size: 0
-                    };
-                }
-                
-                if (result.files.after) {
-                    uploadedFiles.after = {
-                        name: result.files.after.split('\\').pop().split('/').pop(),
-                        path: result.files.after,
-                        size: 0
-                    };
-                }
-                
-                updateFileInfo();
-            } else {
-                Logger.error(`Failed to select files: ${result.error || 'Unknown error'}`);
-                showError(result.error || 'Failed to select files');
-            }
-        } catch (error) {
-            Logger.error(`Exception during file selection: ${error.message}`);
-            showError(error.message);
-        } finally {
-            // Reset the file input value to allow selecting the same files again
-            fileInput.value = '';
+    // Handle click on upload area to trigger file input
+    filesUploadArea.addEventListener('click', (event) => {
+        // Only trigger file input if the click wasn't on the upload button or other interactive elements
+        if (event.target === filesUploadArea || event.target.classList.contains('upload-area') || 
+            event.target.classList.contains('upload-icon') || event.target.classList.contains('upload-title') ||
+            event.target.classList.contains('upload-desc')) {
+            fileInput.click();
         }
     });
 
@@ -409,9 +712,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Show loading, hide other sections
         Logger.log('Showing loading section');
-        filesUploadArea.classList.add('hidden');
+        // Hide the upload section
+        const uploadSection = document.querySelector('.section:not(#analysisDashboard)');
+        if (uploadSection) {
+            uploadSection.classList.add('hidden');
+        }
         loadingSection.classList.remove('hidden');
         errorSection.classList.add('hidden');
+        
+        // Hide instructions section when starting analysis
+        const instructionsSection = document.getElementById('instructionsSection');
+        if (instructionsSection) {
+            instructionsSection.classList.add('hidden');
+        }
 
         try {
             Logger.log('Calling analyzeFiles API');
@@ -420,9 +733,18 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (result.success && result.data.success) {
                 Logger.log('Analysis successful, displaying results');
+                // Ensure dashboard is visible before displaying results
+                analysisDashboard.classList.remove('hidden');
+                analysisDashboard.style.display = 'block';
+                
                 displayResults(result.data);
                 loadingSection.classList.add('hidden');
-                analysisDashboard.classList.remove('hidden');
+                
+                // Add professional animations to results
+                addProfessionalAnimations();
+                
+                // Save to recent analyses
+                saveToRecentAnalyses(result.data);
                 
                 // Reset uploaded files
                 uploadedFiles = { json: null, base: null, before: null, after: null };
@@ -432,15 +754,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 Logger.error(`Analysis failed: ${error}`);
                 showError(error);
                 loadingSection.classList.add('hidden');
-                filesUploadArea.classList.remove('hidden');
-                errorSection.classList.remove('hidden');
+                // Show upload section again
+                if (uploadSection) {
+                    uploadSection.classList.remove('hidden');
+                }
+                analysisDashboard.classList.add('hidden');
+                
+                // Show instructions again if analysis fails
+                if (instructionsSection) {
+                    instructionsSection.classList.remove('hidden');
+                }
             }
         } catch (error) {
             Logger.error(`Exception during analysis: ${error.message}`);
             showError(error.message);
             loadingSection.classList.add('hidden');
-            filesUploadArea.classList.remove('hidden');
+            // Show upload section again
+            if (uploadSection) {
+                uploadSection.classList.remove('hidden');
+            }
             errorSection.classList.remove('hidden');
+            analysisDashboard.classList.add('hidden');
+            
+            // Show instructions again if analysis fails
+            const instructionsSection = document.getElementById('instructionsSection');
+            if (instructionsSection) {
+                instructionsSection.classList.remove('hidden');
+            }
         }
     });
 
@@ -449,15 +789,79 @@ document.addEventListener('DOMContentLoaded', () => {
         Logger.log('Analyze another file button clicked');
         resetToInitialState();
     });
+    
+    // Full screen button click
+    fullscreenBtn.addEventListener('click', () => {
+        Logger.log('Full screen button clicked');
+        toggleFullScreen();
+    });
+    
+    // Close full screen button click
+    closeFullscreenBtn.addEventListener('click', () => {
+        Logger.log('Close full screen button clicked');
+        fullScreenDashboard.classList.remove('active');
+    });
+    
+    // Analyze another file button click (fullscreen)
+    analyzeAnotherBtnFullscreen.addEventListener('click', () => {
+        Logger.log('Analyze another file button clicked (fullscreen)');
+        fullScreenDashboard.classList.remove('active');
+        resetToInitialState();
+    });
+    
+    // Sidebar tab switching
+    sidebarTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabName = tab.getAttribute('data-tab');
+            // Simplified tab switching for sidebar only
+            sidebarTabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            sidebarTabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            const tabContent = document.getElementById(`${tabName}Tab`);
+            if (tabContent) {
+                tabContent.classList.add('active');
+            }
+            
+            const activeTab = Array.from(sidebarTabs).find(tab => tab.getAttribute('data-tab') === tabName);
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
+        });
+    });
 
     backBtn.addEventListener('click', () => {
         Logger.log('Back button clicked in error section');
         errorSection.classList.add('hidden');
-        filesUploadArea.classList.remove('hidden');
+        // Show the upload section
+        const uploadSection = document.querySelector('.section:not(#analysisDashboard)');
+        if (uploadSection) {
+            uploadSection.classList.remove('hidden');
+        }
     });
 
     function displayResults(data) {
         Logger.log('Displaying analysis results');
+        
+        // Make sure the analysis dashboard is visible and upload section is hidden
+        analysisDashboard.classList.remove('hidden');
+        analysisDashboard.style.display = 'block';
+        // Hide the upload section
+        const uploadSection = document.querySelector('.section:not(#analysisDashboard)');
+        if (uploadSection) {
+            uploadSection.classList.add('hidden');
+        }
+        
+        // Hide the instructions section in the sidebar when showing analysis
+        const instructionsSection = document.getElementById('instructionsSection');
+        if (instructionsSection) {
+            instructionsSection.classList.add('hidden');
+        }
+        
         // Display summary cards
         displaySummary(data.summary);
         
@@ -468,20 +872,62 @@ document.addEventListener('DOMContentLoaded', () => {
         displayFailingTests(data.failingTests);
         displayFailToPassTests(data.failToPassTests);
         displayPassToPassTests(data.passToPassTests);
+        
+        // Add professional animations to results
+        addProfessionalAnimations();
+        
+        // Add visualization enhancements
+        addDataVisualizations();
+        
+        // Ensure the dashboard is visible and properly displayed
+        setTimeout(() => {
+            analysisDashboard.classList.remove('hidden');
+            analysisDashboard.style.display = 'block';
+            // Scroll to the analysis dashboard for better UX
+            analysisDashboard.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+    }
+
+    // Add data visualization enhancements
+    function addDataVisualizations() {
+        Logger.log('Adding data visualizations');
+        
+        // Add visualization to each section for better visual appeal
+        const sections = document.querySelectorAll('.section:not(:first-child)');
+        sections.forEach((section, index) => {
+            // Skip the first section (upload files) and add delay for staggered animation
+            setTimeout(() => {
+                section.classList.add('fade-in-up');
+            }, index * 200);
+        });
     }
 
     function displaySummary(summary) {
         Logger.log('Displaying summary cards');
         const cards = summaryCards.querySelectorAll('.stat-card');
         
-        // Update card values
+        // Update card values with animation
         if (cards.length >= 6) {
-            cards[0].querySelector('.stat-value').textContent = summary.baseFailCount;
-            cards[1].querySelector('.stat-value').textContent = summary.beforeFailCount;
-            cards[2].querySelector('.stat-value').textContent = summary.afterFailCount;
-            cards[3].querySelector('.stat-value').textContent = summary.totalF2P;
-            cards[4].querySelector('.stat-value').textContent = summary.totalP2P;
-            cards[5].querySelector('.stat-value').textContent = summary.allPassCount;
+            // Animate the value changes
+            const animateValue = (element, start, end, duration) => {
+                let startTimestamp = null;
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    element.textContent = Math.floor(progress * (end - start) + start);
+                    if (progress < 1) {
+                        window.requestAnimationFrame(step);
+                    }
+                };
+                window.requestAnimationFrame(step);
+            };
+            
+            animateValue(cards[0].querySelector('.stat-value'), 0, summary.baseFailCount, 1000);
+            animateValue(cards[1].querySelector('.stat-value'), 0, summary.beforeFailCount, 1000);
+            animateValue(cards[2].querySelector('.stat-value'), 0, summary.afterFailCount, 1000);
+            animateValue(cards[3].querySelector('.stat-value'), 0, summary.totalF2P, 1000);
+            animateValue(cards[4].querySelector('.stat-value'), 0, summary.totalP2P, 1000);
+            animateValue(cards[5].querySelector('.stat-value'), 0, summary.allPassCount, 1000);
         }
     }
 
@@ -489,7 +935,7 @@ document.addEventListener('DOMContentLoaded', () => {
         Logger.log(`Displaying ${results.length} validation results`);
         validationResults.innerHTML = '';
         
-        results.forEach((result) => {
+        results.forEach((result, index) => {
             const validationItem = document.createElement('div');
             validationItem.className = `validation-item ${result.status === 'PASS' ? '' : 'fail'}`;
             
@@ -506,6 +952,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     'No examples found'}</div>
             `;
             
+            // Add smooth transition for staggered appearance
+            validationItem.classList.add('smooth-transition');
+            validationItem.style.transitionDelay = `${index * 0.1}s`;
             validationResults.appendChild(validationItem);
         });
     }
@@ -540,7 +989,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                    (afterStatus.startsWith('PASS') ? 'badge-pass' : 'badge-absent');
             
             tableHTML += `
-                <tr>
+                <tr class="smooth-transition">
                     <td>${testName}</td>
                     <td><span class="status-badge ${f2pStatus}">${inF2P}</span></td>
                     <td><span class="status-badge ${p2pStatus}">${inP2P}</span></td>
@@ -581,7 +1030,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                    (afterStatus.startsWith('PASS') ? 'badge-pass' : 'badge-absent');
             
             tableHTML += `
-                <tr>
+                <tr class="smooth-transition">
                     <td>${serialNumber}</td>
                     <td>${testName}</td>
                     <td><span class="status-badge ${baseBadgeStatus}">${baseStatus}</span></td>
@@ -621,7 +1070,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                    (afterStatus.startsWith('PASS') ? 'badge-pass' : 'badge-absent');
             
             tableHTML += `
-                <tr>
+                <tr class="smooth-transition">
                     <td>${serialNumber}</td>
                     <td>${testName}</td>
                     <td><span class="status-badge ${baseBadgeStatus}">${baseStatus}</span></td>
@@ -637,6 +1086,26 @@ document.addEventListener('DOMContentLoaded', () => {
     function showError(message) {
         Logger.error(`Showing error: ${message}`);
         errorMessage.textContent = message;
+        // Add smooth transition to error section
+        errorSection.classList.add('smooth-transition');
+        setTimeout(() => {
+            errorSection.classList.remove('smooth-transition');
+        }, 1000);
+    }
+    
+    // Initialize recent analyses display
+    Logger.log(`Initializing recent analyses display. Recent analyses count: ${recentAnalyses.length}`);
+    updateRecentAnalysesDisplay();
+    
+    // Initialize professional animations
+    addProfessionalAnimations();
+    
+    // Check if sidebar should be full width
+    if (sidebarTabs.length === 1) {
+        const mainContent = document.querySelector('.main-content');
+        if (mainContent) {
+            mainContent.classList.add('full-width');
+        }
     }
     
     Logger.log('Application initialized successfully');
