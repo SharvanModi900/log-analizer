@@ -17,19 +17,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const uploadFilesBtn = document.getElementById('uploadFilesBtn');
     const fileInput = document.getElementById('fileInput');
     const analyzeBtn = document.getElementById('analyzeBtn');
-    const uploadSection = document.getElementById('uploadSection');
+    const filesUploadArea = document.getElementById('filesUploadArea');
     const loadingSection = document.getElementById('loadingSection');
-    const resultsSection = document.getElementById('resultsSection');
     const errorSection = document.getElementById('errorSection');
     const errorMessage = document.getElementById('errorMessage');
     const backBtn = document.getElementById('backBtn');
-    const resultsBackBtn = document.getElementById('resultsBackBtn');
     const filesInfo = document.getElementById('filesInfo');
     const fileList = document.getElementById('fileList');
     const validationResults = document.getElementById('validationResults');
-    const failingTestsTable = document.getElementById('failingTestsTable');
-    const failToPassTable = document.getElementById('failToPassTable');
-    const passToPassTable = document.getElementById('passToPassTable');
     const summaryCards = document.getElementById('summaryCards');
 
     // Track uploaded files
@@ -50,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (totalFiles > 0) {
             filesInfo.innerHTML = `
-                <p class="text-green-700">
+                <p>
                     <i class="fas fa-check-circle text-green-500 mr-2"></i>
                     Selected ${totalFiles} file(s)
                 </p>
@@ -58,91 +53,73 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Show file list
             fileList.classList.remove('hidden');
-            let fileListHTML = '<div class="text-left"><h4 class="font-medium text-gray-700 mb-2">Selected Files:</h4><ul class="space-y-1">';
+            let fileListHTML = '<div class="file-list-content mt-4">';
             
             if (uploadedFiles.json) {
-                fileListHTML += `<li class="flex items-center text-sm"><i class="fas fa-file-code text-blue-500 mr-2"></i> ${uploadedFiles.json.name}</li>`;
+                fileListHTML += `
+                    <div class="file-item">
+                        <i class="fas fa-file-code file-icon text-blue-500"></i>
+                        <span class="file-name">${uploadedFiles.json.name}</span>
+                        <i class="fas fa-check-circle text-green-500"></i>
+                    </div>
+                `;
             }
             
             if (uploadedFiles.base) {
-                fileListHTML += `<li class="flex items-center text-sm"><i class="fas fa-file-alt text-blue-500 mr-2"></i> ${uploadedFiles.base.name}</li>`;
+                fileListHTML += `
+                    <div class="file-item">
+                        <i class="fas fa-file-alt file-icon text-blue-500"></i>
+                        <span class="file-name">${uploadedFiles.base.name}</span>
+                        <i class="fas fa-check-circle text-green-500"></i>
+                    </div>
+                `;
             }
             
             if (uploadedFiles.before) {
-                fileListHTML += `<li class="flex items-center text-sm"><i class="fas fa-file-alt text-green-500 mr-2"></i> ${uploadedFiles.before.name}</li>`;
+                fileListHTML += `
+                    <div class="file-item">
+                        <i class="fas fa-file-alt file-icon text-blue-500"></i>
+                        <span class="file-name">${uploadedFiles.before.name}</span>
+                        <i class="fas fa-check-circle text-green-500"></i>
+                    </div>
+                `;
             }
             
             if (uploadedFiles.after) {
-                fileListHTML += `<li class="flex items-center text-sm"><i class="fas fa-file-alt text-red-500 mr-2"></i> ${uploadedFiles.after.name}</li>`;
+                fileListHTML += `
+                    <div class="file-item">
+                        <i class="fas fa-file-alt file-icon text-red-500"></i>
+                        <span class="file-name">${uploadedFiles.after.name}</span>
+                        <i class="fas fa-check-circle text-green-500"></i>
+                    </div>
+                `;
             }
             
-            fileListHTML += '</ul></div>';
+            fileListHTML += '</div>';
             fileList.innerHTML = fileListHTML;
         } else {
-            filesInfo.innerHTML = '<p class="text-gray-700"><i class="fas fa-info-circle text-primary-500 mr-2"></i>No files selected</p>';
+            filesInfo.innerHTML = '<p><i class="fas fa-info-circle text-blue-500 mr-2"></i>No files selected</p>';
             fileList.classList.add('hidden');
         }
 
         // Enable analyze button only when all files are selected
         analyzeBtn.disabled = !(uploadedFiles.json && uploadedFiles.base && uploadedFiles.before && uploadedFiles.after);
         if (uploadedFiles.json && uploadedFiles.base && uploadedFiles.before && uploadedFiles.after) {
-            analyzeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             Logger.log('All files selected, enabling analyze button');
-        } else {
-            analyzeBtn.classList.add('opacity-50', 'cursor-not-allowed');
         }
-    }
-
-    // Format file size
-    function formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
-    // Add animation to cards when they appear
-    function animateCards() {
-        Logger.log('Animating summary cards');
-        const cards = document.querySelectorAll('.summary-card');
-        cards.forEach((card, index) => {
-            card.style.opacity = '0';
-            card.style.transform = 'translateY(20px)';
-            setTimeout(() => {
-                card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-                card.style.opacity = '1';
-                card.style.transform = 'translateY(0)';
-            }, 100 * index);
-        });
-    }
-
-    // Add animation to table rows
-    function animateTableRows(table) {
-        if (!table) return;
-        Logger.log('Animating table rows');
-        const rows = table.querySelectorAll('tbody tr');
-        rows.forEach((row, index) => {
-            row.style.opacity = '0';
-            row.style.transform = 'translateX(-20px)';
-            setTimeout(() => {
-                row.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
-                row.style.opacity = '1';
-                row.style.transform = 'translateX(0)';
-            }, 50 * index);
-        });
     }
 
     // File upload button click
     uploadFilesBtn.addEventListener('click', () => {
         Logger.log('File upload button clicked');
-        fileInput.click();
+        // Call the selectFiles API directly instead of triggering file input
+        selectFilesDirectly();
     });
 
-    // Handle file selection
-    fileInput.addEventListener('change', async (event) => {
-        Logger.log('Files selected via file input');
+    // Direct file selection function
+    async function selectFilesDirectly() {
         try {
+            Logger.log('Direct file selection initiated');
             const result = await window.electronAPI.selectFiles();
             
             if (result.success) {
@@ -190,6 +167,80 @@ document.addEventListener('DOMContentLoaded', () => {
             Logger.error(`Exception during file selection: ${error.message}`);
             showError(error.message);
         }
+    }
+
+    // Handle file selection (this will be triggered by drag and drop)
+    fileInput.addEventListener('change', async (event) => {
+        Logger.log('Files selected via file input (drag and drop)');
+        // Check if any files were actually selected
+        if (event.target.files.length === 0) {
+            Logger.warn('No files selected in change event');
+            return;
+        }
+        
+        try {
+            // Process drag and drop files
+            const files = Array.from(event.target.files);
+            Logger.log(`Processing ${files.length} files from drag and drop`);
+            
+            // Create a temporary object to hold file information
+            const fileData = {
+                json: null,
+                base: null,
+                before: null,
+                after: null
+            };
+            
+            // Identify files
+            for (const file of files) {
+                const fileName = file.name.toLowerCase();
+                Logger.log(`Processing file: ${fileName}`);
+                
+                if (fileName.endsWith('.json')) {
+                    fileData.json = {
+                        name: file.name,
+                        path: file.path || file.name,
+                        size: file.size
+                    };
+                    Logger.log(`Identified JSON file: ${file.name}`);
+                } else if (fileName.endsWith('_base.log')) {
+                    fileData.base = {
+                        name: file.name,
+                        path: file.path || file.name,
+                        size: file.size
+                    };
+                    Logger.log(`Identified Base Log file: ${file.name}`);
+                } else if (fileName.endsWith('_before.log')) {
+                    fileData.before = {
+                        name: file.name,
+                        path: file.path || file.name,
+                        size: file.size
+                    };
+                    Logger.log(`Identified Before Log file: ${file.name}`);
+                } else if (fileName.endsWith('_after.log')) {
+                    fileData.after = {
+                        name: file.name,
+                        path: file.path || file.name,
+                        size: file.size
+                    };
+                    Logger.log(`Identified After Log file: ${file.name}`);
+                }
+            }
+            
+            // Check if we have all required files
+            if (!fileData.json || !fileData.base || !fileData.before || !fileData.after) {
+                Logger.warn('Not all required files were selected via drag and drop');
+                showError('Please select all required files (JSON, _base.log, _before.log, _after.log)');
+                return;
+            }
+            
+            // Update uploaded files
+            uploadedFiles = fileData;
+            updateFileInfo();
+        } catch (error) {
+            Logger.error(`Exception during drag and drop file processing: ${error.message}`);
+            showError(error.message);
+        }
     });
 
     // Analyze files
@@ -201,25 +252,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Add ripple effect to button
-        const ripple = document.createElement('span');
-        ripple.classList.add('ripple');
-        const rect = analyzeBtn.getBoundingClientRect();
-        const size = Math.max(rect.width, rect.height);
-        ripple.style.width = ripple.style.height = `${size}px`;
-        ripple.style.left = `${event.clientX - rect.left - size / 2}px`;
-        ripple.style.top = `${event.clientY - rect.top - size / 2}px`;
-        analyzeBtn.appendChild(ripple);
-        
-        setTimeout(() => {
-            ripple.remove();
-        }, 600);
-
         // Show loading, hide other sections
         Logger.log('Showing loading section');
-        uploadSection.classList.add('hidden');
+        document.querySelector('.main-content').classList.add('hidden');
         loadingSection.classList.remove('hidden');
-        resultsSection.classList.add('hidden');
         errorSection.classList.add('hidden');
 
         try {
@@ -231,20 +267,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 Logger.log('Analysis successful, displaying results');
                 displayResults(result.data);
                 loadingSection.classList.add('hidden');
-                resultsSection.classList.remove('hidden');
+                document.querySelector('.main-content').classList.remove('hidden');
                 
                 // Reset uploaded files
                 uploadedFiles = { json: null, base: null, before: null, after: null };
                 updateFileInfo();
-                
-                // Trigger animations after a short delay
-                setTimeout(() => {
-                    animateCards();
-                    // Animate tables
-                    document.querySelectorAll('table').forEach(table => {
-                        animateTableRows(table);
-                    });
-                }, 100);
             } else {
                 const error = result.error || (result.data && result.data.error) || 'Unknown error occurred';
                 Logger.error(`Analysis failed: ${error}`);
@@ -263,13 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
     backBtn.addEventListener('click', () => {
         Logger.log('Back button clicked in error section');
         errorSection.classList.add('hidden');
-        uploadSection.classList.remove('hidden');
-    });
-
-    resultsBackBtn.addEventListener('click', () => {
-        Logger.log('Back button clicked in results section');
-        resultsSection.classList.add('hidden');
-        uploadSection.classList.remove('hidden');
+        document.querySelector('.main-content').classList.remove('hidden');
     });
 
     function displayResults(data) {
@@ -280,169 +301,174 @@ document.addEventListener('DOMContentLoaded', () => {
         // Display validation results
         displayValidationResults(data.validationResults);
         
-        // Display failing tests
+        // Display tables with actual data
         displayFailingTests(data.failingTests);
-        
-        // Display fail to pass tests
-        displayTestTable(failToPassTable, data.failToPassTests, ['Test Name', 'Base', 'Before', 'After']);
-        
-        // Display pass to pass tests
-        displayTestTable(passToPassTable, data.passToPassTests, ['Test Name', 'Base', 'Before', 'After']);
+        displayFailToPassTests(data.failToPassTests);
+        displayPassToPassTests(data.passToPassTests);
     }
 
     function displaySummary(summary) {
         Logger.log('Displaying summary cards');
-        summaryCards.innerHTML = `
-            <div class="summary-card card-gradient rounded-2xl p-6 shadow-md hover-lift border-t-4 border-green-500">
-                <div class="text-gray-600 text-sm font-medium mb-2">Base Failures</div>
-                <div class="text-3xl font-bold text-green-600">${summary.baseFailCount}</div>
-            </div>
-            <div class="summary-card card-gradient rounded-2xl p-6 shadow-md hover-lift border-t-4 border-yellow-500">
-                <div class="text-gray-600 text-sm font-medium mb-2">Before Failures</div>
-                <div class="text-3xl font-bold text-yellow-600">${summary.beforeFailCount}</div>
-            </div>
-            <div class="summary-card card-gradient rounded-2xl p-6 shadow-md hover-lift border-t-4 border-red-500">
-                <div class="text-gray-600 text-sm font-medium mb-2">After Failures</div>
-                <div class="text-3xl font-bold text-red-600">${summary.afterFailCount}</div>
-            </div>
-            <div class="summary-card card-gradient rounded-2xl p-6 shadow-md hover-lift border-t-4 border-blue-500">
-                <div class="text-gray-600 text-sm font-medium mb-2">F2P Tests</div>
-                <div class="text-3xl font-bold text-blue-600">${summary.totalF2P}</div>
-            </div>
-            <div class="summary-card card-gradient rounded-2xl p-6 shadow-md hover-lift border-t-4 border-indigo-500">
-                <div class="text-gray-600 text-sm font-medium mb-2">P2P Tests</div>
-                <div class="text-3xl font-bold text-indigo-600">${summary.totalP2P}</div>
-            </div>
-            <div class="summary-card card-gradient rounded-2xl p-6 shadow-md hover-lift border-t-4 border-purple-500">
-                <div class="text-gray-600 text-sm font-medium mb-2">All Pass P2P</div>
-                <div class="text-3xl font-bold text-purple-600">${summary.allPassCount}</div>
-            </div>
-        `;
+        const cards = summaryCards.querySelectorAll('.stat-card');
+        
+        // Update card values
+        if (cards.length >= 6) {
+            cards[0].querySelector('.stat-value').textContent = summary.baseFailCount;
+            cards[1].querySelector('.stat-value').textContent = summary.beforeFailCount;
+            cards[2].querySelector('.stat-value').textContent = summary.afterFailCount;
+            cards[3].querySelector('.stat-value').textContent = summary.totalF2P;
+            cards[4].querySelector('.stat-value').textContent = summary.totalP2P;
+            cards[5].querySelector('.stat-value').textContent = summary.allPassCount;
+        }
     }
 
     function displayValidationResults(results) {
         Logger.log(`Displaying ${results.length} validation results`);
         validationResults.innerHTML = '';
         
-        results.forEach((result, index) => {
+        results.forEach((result) => {
             const validationItem = document.createElement('div');
-            validationItem.className = `validation-item card-gradient rounded-2xl p-6 shadow-md mb-4 border-l-4 ${result.status === 'PASS' ? 'border-green-500' : 'border-red-500'}`;
+            validationItem.className = `validation-item ${result.status === 'PASS' ? '' : 'fail'}`;
             
-            const statusClass = result.status === 'PASS' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-            const statusText = result.status === 'PASS' ? 'PASS ✅' : 'FAIL ❌';
-            const icon = result.status === 'PASS' ? 'fa-check-circle' : 'fa-times-circle';
+            const statusClass = result.status === 'PASS' ? 'status-pass' : 'status-fail';
+            const statusText = result.status === 'PASS' ? 'PASS' : 'FAIL';
             
             validationItem.innerHTML = `
-                <h4 class="text-lg font-semibold text-gray-800 mb-3"><i class="fas ${icon} mr-2"></i>${index + 1}. ${result.description}</h4>
-                <p class="mb-3">Status: <strong class="px-3 py-1 rounded-full text-sm font-medium ${statusClass}">${statusText}</strong></p>
-                ${result.examples && result.examples.length > 0 ? `
-                    <div class="examples-list bg-gray-50 rounded-xl p-4 mt-4">
-                        <p class="font-medium text-gray-700 mb-2"><i class="fas fa-list mr-2"></i>Examples (${result.examples.length}):</p>
-                        <ul class="pl-5 max-h-40 overflow-y-auto">
-                            ${result.examples.slice(0, 10).map(example => `<li class="mb-1 text-gray-600">${example}</li>`).join('')}
-                            ${result.examples.length > 10 ? `<li class="text-gray-500">... and ${result.examples.length - 10} more</li>` : ''}
-                        </ul>
-                    </div>
-                ` : '<p class="text-gray-500">No examples found.</p>'}
+                <div class="validation-header">
+                    <div class="validation-title">${result.description}</div>
+                    <div class="validation-status ${statusClass}">${statusText}</div>
+                </div>
+                <div class="examples">${result.examples && result.examples.length > 0 ? 
+                    `Examples: ${result.examples.slice(0, 3).join(', ')}${result.examples.length > 3 ? '...' : ''}` : 
+                    'No examples found'}</div>
             `;
             
             validationResults.appendChild(validationItem);
         });
     }
 
-    function displayFailingTests(data) {
-        Logger.log(`Displaying ${data ? data.length : 0} failing tests`);
-        if (!data || data.length === 0) {
-            failingTestsTable.innerHTML = '<p class="text-gray-500 py-4">No failing tests found across any state.</p>';
+    function displayFailingTests(failingTests) {
+        Logger.log(`Displaying ${failingTests.length} failing tests`);
+        const tableBody = document.querySelector('#failingTestsTable tbody');
+        
+        if (failingTests.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">No failing tests found</td></tr>';
             return;
         }
-
-        let tableHTML = `
-            <div class="overflow-x-auto rounded-2xl shadow-md">
-                <table class="min-w-full bg-white">
-                    <thead>
-                        <tr class="bg-gradient-to-r from-primary-600 to-primary-800 text-white">
-                            <th class="py-3 px-4 text-left">Test Name</th>
-                            <th class="py-3 px-4 text-left">f2p(present)</th>
-                            <th class="py-3 px-4 text-left">p2p(present)</th>
-                            <th class="py-3 px-4 text-left">Base</th>
-                            <th class="py-3 px-4 text-left">Before</th>
-                            <th class="py-3 px-4 text-left">After</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
-
-        data.forEach(row => {
+        
+        let tableHTML = '';
+        failingTests.forEach((testRow, index) => {
+            // Each row contains: [test_name, in_f2p, in_p2p, base_status, before_status, after_status]
+            const testName = testRow[0];
+            const inF2P = testRow[1];
+            const inP2P = testRow[2];
+            const baseStatus = testRow[3];
+            const beforeStatus = testRow[4];
+            const afterStatus = testRow[5];
+            
+            // Determine status badges
+            const f2pStatus = inF2P === 'Yes' ? 'badge-pass' : 'badge-default';
+            const p2pStatus = inP2P === 'Yes' ? 'badge-pass' : 'badge-default';
+            const baseBadgeStatus = baseStatus.startsWith('FAIL') ? 'badge-fail' : 
+                                  (baseStatus.startsWith('PASS') ? 'badge-pass' : 'badge-absent');
+            const beforeBadgeStatus = beforeStatus.startsWith('FAIL') ? 'badge-fail' : 
+                                    (beforeStatus.startsWith('PASS') ? 'badge-pass' : 'badge-absent');
+            const afterBadgeStatus = afterStatus.startsWith('FAIL') ? 'badge-fail' : 
+                                   (afterStatus.startsWith('PASS') ? 'badge-pass' : 'badge-absent');
+            
             tableHTML += `
-                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                    <td class="py-3 px-4">${row[0]}</td>
-                    <td class="py-3 px-4">${row[1] === 'Yes' ? '<span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Yes</span>' : '<span class="text-gray-400">No</span>'}</td>
-                    <td class="py-3 px-4">${row[2] === 'Yes' ? '<span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Yes</span>' : '<span class="text-gray-400">No</span>'}</td>
-                    <td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-sm font-medium ${getStatusBadgeClass(row[3])}">${row[3]}</span></td>
-                    <td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-sm font-medium ${getStatusBadgeClass(row[4])}">${row[4]}</span></td>
-                    <td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-sm font-medium ${getStatusBadgeClass(row[5])}">${row[5]}</span></td>
+                <tr>
+                    <td>${testName}</td>
+                    <td><span class="status-badge ${f2pStatus}">${inF2P}</span></td>
+                    <td><span class="status-badge ${p2pStatus}">${inP2P}</span></td>
+                    <td><span class="status-badge ${baseBadgeStatus}">${baseStatus}</span></td>
+                    <td><span class="status-badge ${beforeBadgeStatus}">${beforeStatus}</span></td>
+                    <td><span class="status-badge ${afterBadgeStatus}">${afterStatus}</span></td>
                 </tr>
             `;
         });
-
-        tableHTML += `
-                    </tbody>
-                </table>
-            </div>
-        `;
-
-        failingTestsTable.innerHTML = tableHTML;
+        
+        tableBody.innerHTML = tableHTML;
     }
 
-    function displayTestTable(container, data, headers) {
-        Logger.log(`Displaying test table with ${data ? data.length : 0} rows`);
-        if (!data || data.length === 0) {
-            container.innerHTML = '<p class="text-gray-500 py-4">No tests to display.</p>';
+    function displayFailToPassTests(failToPassTests) {
+        Logger.log(`Displaying ${failToPassTests.length} fail to pass tests`);
+        const tableBody = document.querySelector('#failToPassTable tbody');
+        
+        if (failToPassTests.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">No fail to pass tests found</td></tr>';
             return;
         }
-
-        let tableHTML = `
-            <div class="overflow-x-auto rounded-2xl shadow-md">
-                <table class="min-w-full bg-white">
-                    <thead>
-                        <tr class="bg-gradient-to-r from-primary-600 to-primary-800 text-white">
-                            <th class="py-3 px-4 text-left">#</th>
-                            ${headers.map(header => `<th class="py-3 px-4 text-left">${header}</th>`).join('')}
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
-
-        data.forEach(row => {
+        
+        let tableHTML = '';
+        failToPassTests.forEach((testRow, index) => {
+            // Each row contains: [index, test_name, base_status, before_status, after_status]
+            const serialNumber = testRow[0];
+            const testName = testRow[1];
+            const baseStatus = testRow[2];
+            const beforeStatus = testRow[3];
+            const afterStatus = testRow[4];
+            
+            // Determine status badges
+            const baseBadgeStatus = baseStatus.startsWith('FAIL') ? 'badge-fail' : 
+                                  (baseStatus.startsWith('PASS') ? 'badge-pass' : 'badge-absent');
+            const beforeBadgeStatus = beforeStatus.startsWith('FAIL') ? 'badge-fail' : 
+                                    (beforeStatus.startsWith('PASS') ? 'badge-pass' : 'badge-absent');
+            const afterBadgeStatus = afterStatus.startsWith('FAIL') ? 'badge-fail' : 
+                                   (afterStatus.startsWith('PASS') ? 'badge-pass' : 'badge-absent');
+            
             tableHTML += `
-                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                    <td class="py-3 px-4">${row[0]}</td>
-                    ${row.slice(1).map((cell, index) => {
-                        if (index > 0) { // Status columns
-                            return `<td class="py-3 px-4"><span class="px-3 py-1 rounded-full text-sm font-medium ${getStatusBadgeClass(cell)}">${cell}</span></td>`;
-                        } else { // Test name column
-                            return `<td class="py-3 px-4">${cell}</td>`;
-                        }
-                    }).join('')}
+                <tr>
+                    <td>${serialNumber}</td>
+                    <td>${testName}</td>
+                    <td><span class="status-badge ${baseBadgeStatus}">${baseStatus}</span></td>
+                    <td><span class="status-badge ${beforeBadgeStatus}">${beforeStatus}</span></td>
+                    <td><span class="status-badge ${afterBadgeStatus}">${afterStatus}</span></td>
                 </tr>
             `;
         });
-
-        tableHTML += `
-                    </tbody>
-                </table>
-            </div>
-        `;
-
-        container.innerHTML = tableHTML;
+        
+        tableBody.innerHTML = tableHTML;
     }
 
-    function getStatusBadgeClass(status) {
-        if (status.includes('PASS')) return 'bg-green-100 text-green-800';
-        if (status.includes('FAIL')) return 'bg-red-100 text-red-800';
-        if (status.includes('ABSENT')) return 'bg-yellow-100 text-yellow-800';
-        return 'bg-gray-100 text-gray-800';
+    function displayPassToPassTests(passToPassTests) {
+        Logger.log(`Displaying ${passToPassTests.length} pass to pass tests`);
+        const tableBody = document.querySelector('#passToPassTable tbody');
+        
+        if (passToPassTests.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">No pass to pass tests found</td></tr>';
+            return;
+        }
+        
+        let tableHTML = '';
+        passToPassTests.forEach((testRow, index) => {
+            // Each row contains: [index, test_name, base_status, before_status, after_status]
+            const serialNumber = testRow[0];
+            const testName = testRow[1];
+            const baseStatus = testRow[2];
+            const beforeStatus = testRow[3];
+            const afterStatus = testRow[4];
+            
+            // Determine status badges
+            const baseBadgeStatus = baseStatus.startsWith('FAIL') ? 'badge-fail' : 
+                                  (baseStatus.startsWith('PASS') ? 'badge-pass' : 'badge-absent');
+            const beforeBadgeStatus = beforeStatus.startsWith('FAIL') ? 'badge-fail' : 
+                                    (beforeStatus.startsWith('PASS') ? 'badge-pass' : 'badge-absent');
+            const afterBadgeStatus = afterStatus.startsWith('FAIL') ? 'badge-fail' : 
+                                   (afterStatus.startsWith('PASS') ? 'badge-pass' : 'badge-absent');
+            
+            tableHTML += `
+                <tr>
+                    <td>${serialNumber}</td>
+                    <td>${testName}</td>
+                    <td><span class="status-badge ${baseBadgeStatus}">${baseStatus}</span></td>
+                    <td><span class="status-badge ${beforeBadgeStatus}">${beforeStatus}</span></td>
+                    <td><span class="status-badge ${afterBadgeStatus}">${afterStatus}</span></td>
+                </tr>
+            `;
+        });
+        
+        tableBody.innerHTML = tableHTML;
     }
 
     function showError(message) {

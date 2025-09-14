@@ -104,7 +104,15 @@ ipcMain.handle('select-files', async () => {
   
   Logger.log(`Files selected: ${result.filePaths.length} files`);
   
-  // Identify and store file paths without resetting previously selected files
+  // Reset uploaded files before processing new selection
+  uploadedFiles = {
+    jsonPath: null,
+    baseLogPath: null,
+    beforeLogPath: null,
+    afterLogPath: null
+  };
+  
+  // Identify and store file paths
   for (const filePath of result.filePaths) {
     const fileName = path.basename(filePath).toLowerCase();
     Logger.log(`Processing file: ${fileName}`);
@@ -123,6 +131,22 @@ ipcMain.handle('select-files', async () => {
       Logger.log(`Identified After Log file: ${filePath}`);
     }
   }
+  
+  // Validate that we have all required files
+  const hasAllFiles = uploadedFiles.jsonPath && 
+                      uploadedFiles.baseLogPath && 
+                      uploadedFiles.beforeLogPath && 
+                      uploadedFiles.afterLogPath;
+  
+  if (!hasAllFiles) {
+    Logger.warn('Not all required files were selected');
+    return { 
+      success: false, 
+      error: 'Please select all required files (JSON, _base.log, _before.log, _after.log)' 
+    };
+  }
+  
+  Logger.log(`File selection complete. All required files present: ${hasAllFiles}`);
   
   return { 
     success: true, 
@@ -158,15 +182,43 @@ ipcMain.handle('analyze-files', async () => {
     return { success: false, error: 'Please upload the _after.log file' };
   }
   
+  // Verify that files actually exist
+  try {
+    if (!fs.existsSync(uploadedFiles.jsonPath)) {
+      Logger.warn(`JSON file does not exist: ${uploadedFiles.jsonPath}`);
+      return { success: false, error: 'JSON file not found' };
+    }
+    
+    if (!fs.existsSync(uploadedFiles.baseLogPath)) {
+      Logger.warn(`Base log file does not exist: ${uploadedFiles.baseLogPath}`);
+      return { success: false, error: 'Base log file not found' };
+    }
+    
+    if (!fs.existsSync(uploadedFiles.beforeLogPath)) {
+      Logger.warn(`Before log file does not exist: ${uploadedFiles.beforeLogPath}`);
+      return { success: false, error: 'Before log file not found' };
+    }
+    
+    if (!fs.existsSync(uploadedFiles.afterLogPath)) {
+      Logger.warn(`After log file does not exist: ${uploadedFiles.afterLogPath}`);
+      return { success: false, error: 'After log file not found' };
+    }
+  } catch (error) {
+    Logger.error(`Error checking file existence: ${error.message}`);
+    return { success: false, error: 'Error verifying uploaded files' };
+  }
+  
   try {
     Logger.log('Starting log analysis');
     const analysisResult = await analyzeLogs(uploadedFiles);
     // Reset file paths after analysis
     Logger.log('Analysis completed, resetting file paths');
-    uploadedFiles.jsonPath = null;
-    uploadedFiles.baseLogPath = null;
-    uploadedFiles.beforeLogPath = null;
-    uploadedFiles.afterLogPath = null;
+    uploadedFiles = {
+      jsonPath: null,
+      baseLogPath: null,
+      beforeLogPath: null,
+      afterLogPath: null
+    };
     return { success: true, data: analysisResult };
   } catch (error) {
     Logger.error(`Analysis failed: ${error.message}`);
