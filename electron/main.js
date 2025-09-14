@@ -104,59 +104,61 @@ ipcMain.handle('select-files', async () => {
   
   Logger.log(`Files selected: ${result.filePaths.length} files`);
   
-  // Reset uploaded files before processing new selection
-  uploadedFiles = {
+  // Process selected files and update uploadedFiles (allow partial selection)
+  const newFiles = {
     jsonPath: null,
     baseLogPath: null,
     beforeLogPath: null,
     afterLogPath: null
   };
   
-  // Identify and store file paths
   for (const filePath of result.filePaths) {
     const fileName = path.basename(filePath).toLowerCase();
     Logger.log(`Processing file: ${fileName}`);
     
     if (fileName.endsWith('.json')) {
+      newFiles.jsonPath = filePath;
       uploadedFiles.jsonPath = filePath;
       Logger.log(`Identified JSON file: ${filePath}`);
     } else if (fileName.endsWith('_base.log')) {
+      newFiles.baseLogPath = filePath;
       uploadedFiles.baseLogPath = filePath;
       Logger.log(`Identified Base Log file: ${filePath}`);
     } else if (fileName.endsWith('_before.log')) {
+      newFiles.beforeLogPath = filePath;
       uploadedFiles.beforeLogPath = filePath;
       Logger.log(`Identified Before Log file: ${filePath}`);
     } else if (fileName.endsWith('_after.log')) {
+      newFiles.afterLogPath = filePath;
       uploadedFiles.afterLogPath = filePath;
       Logger.log(`Identified After Log file: ${filePath}`);
     }
   }
   
-  // Validate that we have all required files
-  const hasAllFiles = uploadedFiles.jsonPath && 
-                      uploadedFiles.baseLogPath && 
-                      uploadedFiles.beforeLogPath && 
-                      uploadedFiles.afterLogPath;
-  
-  if (!hasAllFiles) {
-    Logger.warn('Not all required files were selected');
-    return { 
-      success: false, 
-      error: 'Please select all required files (JSON, _base.log, _before.log, _after.log)' 
-    };
-  }
-  
-  Logger.log(`File selection complete. All required files present: ${hasAllFiles}`);
+  // Return the newly selected files (not requiring all files to be present)
+  Logger.log(`File selection processed. JSON: ${!!newFiles.jsonPath}, Base: ${!!newFiles.baseLogPath}, Before: ${!!newFiles.beforeLogPath}, After: ${!!newFiles.afterLogPath}`);
   
   return { 
     success: true, 
     files: {
-      json: uploadedFiles.jsonPath,
-      base: uploadedFiles.baseLogPath,
-      before: uploadedFiles.beforeLogPath,
-      after: uploadedFiles.afterLogPath
+      json: newFiles.jsonPath,
+      base: newFiles.baseLogPath,
+      before: newFiles.beforeLogPath,
+      after: newFiles.afterLogPath
     }
   };
+});
+
+// Handle resetting file selection
+ipcMain.handle('reset-files', async () => {
+  Logger.log('Resetting file selection');
+  uploadedFiles = {
+    jsonPath: null,
+    baseLogPath: null,
+    beforeLogPath: null,
+    afterLogPath: null
+  };
+  return { success: true };
 });
 
 // Handle analysis

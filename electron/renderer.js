@@ -476,14 +476,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.success) {
                 Logger.log(`Files selected: ${Object.keys(result.files).length} files identified`);
                 
-                // Reset uploaded files
-                uploadedFiles = {
-                    json: null,
-                    base: null,
-                    before: null,
-                    after: null
-                };
-                
                 // Update uploaded files
                 if (result.files.json) {
                     uploadedFiles.json = {
@@ -552,42 +544,34 @@ document.addEventListener('DOMContentLoaded', () => {
         
         Logger.log(`Number of files dropped: ${files.length}`);
         
-        // Process dropped files
-        let newUploadedFiles = {
-            json: null,
-            base: null,
-            before: null,
-            after: null
-        };
-        
-        // Process dropped files
+        // Process dropped files (preserve previously selected files)
         for (const file of files) {
             const fileName = file.name.toLowerCase();
             Logger.log(`Processing dropped file: ${fileName}`);
             
             if (fileName.endsWith('.json')) {
-                newUploadedFiles.json = {
+                uploadedFiles.json = {
                     name: file.name,
                     path: file.path || file.name,
                     size: file.size
                 };
                 Logger.log(`Identified JSON file: ${file.name}`);
             } else if (fileName.endsWith('_base.log')) {
-                newUploadedFiles.base = {
+                uploadedFiles.base = {
                     name: file.name,
                     path: file.path || file.name,
                     size: file.size
                 };
                 Logger.log(`Identified Base Log file: ${file.name}`);
             } else if (fileName.endsWith('_before.log')) {
-                newUploadedFiles.before = {
+                uploadedFiles.before = {
                     name: file.name,
                     path: file.path || file.name,
                     size: file.size
                 };
                 Logger.log(`Identified Before Log file: ${file.name}`);
             } else if (fileName.endsWith('_after.log')) {
-                newUploadedFiles.after = {
+                uploadedFiles.after = {
                     name: file.name,
                     path: file.path || file.name,
                     size: file.size
@@ -596,17 +580,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        Logger.log(`After processing dropped files, newUploadedFiles: JSON=${!!newUploadedFiles.json}, Base=${!!newUploadedFiles.base}, Before=${!!newUploadedFiles.before}, After=${!!newUploadedFiles.after}`);
+        Logger.log(`After processing dropped files, uploadedFiles: JSON=${!!uploadedFiles.json}, Base=${!!uploadedFiles.base}, Before=${!!uploadedFiles.before}, After=${!!uploadedFiles.after}`);
         
-        // Check if we have all required files
-        if (!newUploadedFiles.json || !newUploadedFiles.base || !newUploadedFiles.before || !newUploadedFiles.after) {
-            Logger.warn('Not all required files were dropped');
-            showError('Please drop all required files (JSON, _base.log, _before.log, _after.log)');
-            return;
-        }
-        
-        // Only update uploadedFiles if we have all required files
-        uploadedFiles = newUploadedFiles;
         updateFileInfo();
     });
 
@@ -621,15 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         Logger.log(`Number of files selected: ${event.target.files.length}`);
         
-        // Reset uploaded files
-        uploadedFiles = {
-            json: null,
-            base: null,
-            before: null,
-            after: null
-        };
-        
-        // Process selected files directly from the file input
+        // Process selected files directly from the file input (preserve previously selected files)
         const files = Array.from(event.target.files);
         for (const file of files) {
             const fileName = file.name.toLowerCase();
@@ -667,21 +634,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         Logger.log(`After processing, uploadedFiles: JSON=${!!uploadedFiles.json}, Base=${!!uploadedFiles.base}, Before=${!!uploadedFiles.before}, After=${!!uploadedFiles.after}`);
-        
-        // Check if we have all required files
-        if (!uploadedFiles.json || !uploadedFiles.base || !uploadedFiles.before || !uploadedFiles.after) {
-            Logger.warn('Not all required files were selected via file input');
-            showError('Please select all required files (JSON, _base.log, _before.log, _after.log)');
-            // Reset uploaded files
-            uploadedFiles = {
-                json: null,
-                base: null,
-                before: null,
-                after: null
-            };
-            updateFileInfo();
-            return;
-        }
         
         updateFileInfo();
         
@@ -788,27 +740,37 @@ document.addEventListener('DOMContentLoaded', () => {
     analyzeAnotherBtn.addEventListener('click', () => {
         Logger.log('Analyze another file button clicked');
         resetToInitialState();
+        // Reset files in main process
+        window.electronAPI.resetFiles();
     });
     
     // Full screen button click
-    fullscreenBtn.addEventListener('click', () => {
-        Logger.log('Full screen button clicked');
-        toggleFullScreen();
-    });
+    if (fullscreenBtn) {
+        fullscreenBtn.addEventListener('click', () => {
+            Logger.log('Full screen button clicked');
+            toggleFullScreen();
+        });
+    }
     
     // Close full screen button click
-    closeFullscreenBtn.addEventListener('click', () => {
-        Logger.log('Close full screen button clicked');
-        fullScreenDashboard.classList.remove('active');
-    });
+    if (closeFullscreenBtn) {
+        closeFullscreenBtn.addEventListener('click', () => {
+            Logger.log('Close full screen button clicked');
+            fullScreenDashboard.classList.remove('active');
+        });
+    }
     
     // Analyze another file button click (fullscreen)
-    analyzeAnotherBtnFullscreen.addEventListener('click', () => {
-        Logger.log('Analyze another file button clicked (fullscreen)');
-        fullScreenDashboard.classList.remove('active');
-        resetToInitialState();
-    });
-    
+    if (analyzeAnotherBtnFullscreen) {
+        analyzeAnotherBtnFullscreen.addEventListener('click', () => {
+            Logger.log('Analyze another file button clicked (fullscreen)');
+            fullScreenDashboard.classList.remove('active');
+            resetToInitialState();
+            // Reset files in main process
+            window.electronAPI.resetFiles();
+        });
+    }
+
     // Sidebar tab switching
     sidebarTabs.forEach(tab => {
         tab.addEventListener('click', () => {
