@@ -515,6 +515,34 @@
             color: #334155;
             font-size: 0.9rem;
         }
+        
+        .analyze-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .analyze-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        }
+        
+        .analyze-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
     </style>
 </head>
 <body>
@@ -530,15 +558,6 @@
                         <p>Advanced analysis for Rust test results</p>
                     </div>
                 </div>
-                <div class="controls">
-                    <button class="btn btn-primary" id="uploadFilesBtn">
-                        <i class="fas fa-upload"></i> Upload Files
-                    </button>
-                    <button class="btn btn-secondary" id="analyzeBtn" disabled>
-                        <i class="fas fa-cogs"></i> Analyze
-                    </button>
-                    <input type="file" id="fileInput" multiple class="hidden" accept=".json,.log">
-                </div>
             </div>
         </div>
         
@@ -546,8 +565,53 @@
             <div class="content-area">
                 <div class="section">
                     <h2 class="section-title">
+                        <i class="fas fa-file-upload"></i> Upload Test Files
+                    </h2>
+                    
+                    <div class="upload-area" id="filesUploadArea">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h3 class="upload-title">Upload Test Files</h3>
+                        <p class="upload-desc">Drag and drop your files here</p>
+                        <p class="upload-desc">Required files: JSON, _base.log, _before.log, _after.log</p>
+                        
+                        <!-- Hidden file input for accessibility -->
+                        <input type="file" id="fileInput" multiple class="hidden" accept=".json,.log">
+                        
+                        <div class="flex flex-col items-center gap-4 mt-6">
+                            <button class="btn btn-primary" id="uploadFilesBtn">
+                                <i class="fas fa-folder-open mr-2"></i> Browse Files
+                            </button>
+                            
+                            <div class="file-info" id="filesInfo">
+                                <p><i class="fas fa-info-circle text-blue-500 mr-2"></i>No files selected</p>
+                            </div>
+                            
+                            <div class="file-list hidden w-full" id="fileList"></div>
+                            
+                            <button class="btn analyze-btn hidden" id="analyzeBtn">
+                                <i class="fas fa-cogs mr-2"></i> Analyze Test Results
+                            </button>
+                        </div>
+                        
+                        <div class="mt-6 text-sm text-gray-500">
+                            <p><i class="fas fa-lightbulb mr-2"></i>Tip: You can select multiple files at once</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Analysis Dashboard - Hidden by default, shown after analysis -->
+                <div class="section hidden" id="analysisDashboard">
+                    <h2 class="section-title">
                         <i class="fas fa-chart-bar"></i> Analysis Dashboard
                     </h2>
+                    
+                    <div class="flex justify-end mb-4">
+                        <button class="btn btn-primary" id="analyzeAnotherBtn">
+                            <i class="fas fa-plus-circle mr-2"></i> Analyze Another File
+                        </button>
+                    </div>
                     
                     <div class="stats-grid" id="summaryCards">
                         <div class="stat-card">
@@ -594,129 +658,113 @@
                         </div>
                     </div>
                     
-                    <div class="upload-area" id="filesUploadArea">
-                        <div class="upload-icon">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                        </div>
-                        <h3 class="upload-title">Upload Test Files</h3>
-                        <p class="upload-desc">Select or drag and drop your files here</p>
-                        <p class="upload-desc">Supported: JSON, _base.log, _before.log, _after.log</p>
-                        <div class="file-info" id="filesInfo">
-                            <p><i class="fas fa-info-circle text-blue-500 mr-2"></i>No files selected</p>
-                        </div>
-                        <div class="file-list hidden" id="fileList"></div>
-                        <div class="mt-4 text-sm text-gray-500">
-                            <p><i class="fas fa-lightbulb mr-2"></i>Tip: You can select multiple files at once</p>
+                    <div class="section">
+                        <h2 class="section-title">
+                            <i class="fas fa-clipboard-check"></i> Validation Checks
+                        </h2>
+                        <div class="validation-list" id="validationResults">
+                            <div class="validation-item">
+                                <div class="validation-header">
+                                    <div class="validation-title">Base failures in P2P</div>
+                                    <div class="validation-status status-pass">PASS</div>
+                                </div>
+                                <div class="examples">No examples found</div>
+                            </div>
+                            <div class="validation-item">
+                                <div class="validation-header">
+                                    <div class="validation-title">After failures in F2P/P2P</div>
+                                    <div class="validation-status status-pass">PASS</div>
+                                </div>
+                                <div class="examples">No examples found</div>
+                            </div>
+                            <div class="validation-item">
+                                <div class="validation-header">
+                                    <div class="validation-title">F2P tests in before</div>
+                                    <div class="validation-status status-pass">PASS</div>
+                                </div>
+                                <div class="examples">No examples found</div>
+                            </div>
+                            <div class="validation-item fail">
+                                <div class="validation-header">
+                                    <div class="validation-title">P2P missing in base</div>
+                                    <div class="validation-status status-fail">FAIL</div>
+                                </div>
+                                <div class="examples">No examples found</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="section">
-                    <h2 class="section-title">
-                        <i class="fas fa-clipboard-check"></i> Validation Checks
-                    </h2>
-                    <div class="validation-list" id="validationResults">
-                        <div class="validation-item">
-                            <div class="validation-header">
-                                <div class="validation-title">Base failures in P2P</div>
-                                <div class="validation-status status-pass">PASS</div>
-                            </div>
-                            <div class="examples">No examples found</div>
-                        </div>
-                        <div class="validation-item">
-                            <div class="validation-header">
-                                <div class="validation-title">After failures in F2P/P2P</div>
-                                <div class="validation-status status-pass">PASS</div>
-                            </div>
-                            <div class="examples">No examples found</div>
-                        </div>
-                        <div class="validation-item">
-                            <div class="validation-header">
-                                <div class="validation-title">F2P tests in before</div>
-                                <div class="validation-status status-pass">PASS</div>
-                            </div>
-                            <div class="examples">No examples found</div>
-                        </div>
-                        <div class="validation-item fail">
-                            <div class="validation-header">
-                                <div class="validation-title">P2P missing in base</div>
-                                <div class="validation-status status-fail">FAIL</div>
-                            </div>
-                            <div class="examples">No examples found</div>
+                    
+                    <div class="section">
+                        <h2 class="section-title">
+                            <i class="fas fa-exclamation-triangle"></i> Failing Tests Across All States
+                        </h2>
+                        <div class="table-container" id="failingTestsTable">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Test Name</th>
+                                        <th>f2p(present)</th>
+                                        <th>p2p(present)</th>
+                                        <th>Base</th>
+                                        <th>Before</th>
+                                        <th>After</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="6" class="text-center text-gray-500">No data available. Upload files and analyze to see results.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                </div>
-                
-                <div class="section">
-                    <h2 class="section-title">
-                        <i class="fas fa-exclamation-triangle"></i> Failing Tests Across All States
-                    </h2>
-                    <div class="table-container" id="failingTestsTable">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Test Name</th>
-                                    <th>f2p(present)</th>
-                                    <th>p2p(present)</th>
-                                    <th>Base</th>
-                                    <th>Before</th>
-                                    <th>After</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="6" class="text-center text-gray-500">No data available. Upload files and analyze to see results.</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    
+                    <div class="section">
+                        <h2 class="section-title">
+                            <i class="fas fa-arrow-right-arrow-left"></i> Fail to Pass Tests
+                        </h2>
+                        <div class="table-container" id="failToPassTable">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Test Name</th>
+                                        <th>Base</th>
+                                        <th>Before</th>
+                                        <th>After</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="5" class="text-center text-gray-500">No data available. Upload files and analyze to see results.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="section">
-                    <h2 class="section-title">
-                        <i class="fas fa-arrow-right-arrow-left"></i> Fail to Pass Tests
-                    </h2>
-                    <div class="table-container" id="failToPassTable">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Test Name</th>
-                                    <th>Base</th>
-                                    <th>Before</th>
-                                    <th>After</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="5" class="text-center text-gray-500">No data available. Upload files and analyze to see results.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <div class="section">
-                    <h2 class="section-title">
-                        <i class="fas fa-check-double"></i> Pass to Pass Tests
-                    </h2>
-                    <div class="table-container" id="passToPassTable">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Test Name</th>
-                                    <th>Base</th>
-                                    <th>Before</th>
-                                    <th>After</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="5" class="text-center text-gray-500">No data available. Upload files and analyze to see results.</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    
+                    <div class="section">
+                        <h2 class="section-title">
+                            <i class="fas fa-check-double"></i> Pass to Pass Tests
+                        </h2>
+                        <div class="table-container" id="passToPassTable">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Test Name</th>
+                                        <th>Base</th>
+                                        <th>Before</th>
+                                        <th>After</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="5" class="text-center text-gray-500">No data available. Upload files and analyze to see results.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>

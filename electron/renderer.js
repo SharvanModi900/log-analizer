@@ -26,6 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileList = document.getElementById('fileList');
     const validationResults = document.getElementById('validationResults');
     const summaryCards = document.getElementById('summaryCards');
+    const analysisDashboard = document.getElementById('analysisDashboard');
+    const analyzeAnotherBtn = document.getElementById('analyzeAnotherBtn');
 
     // Track uploaded files
     let uploadedFiles = {
@@ -97,33 +99,105 @@ document.addEventListener('DOMContentLoaded', () => {
             
             fileListHTML += '</div>';
             fileList.innerHTML = fileListHTML;
+            
+            // Show analyze button when all files are selected
+            if (uploadedFiles.json && uploadedFiles.base && uploadedFiles.before && uploadedFiles.after) {
+                analyzeBtn.classList.remove('hidden');
+                analyzeBtn.disabled = false;
+                Logger.log('All files selected, showing analyze button');
+            } else {
+                analyzeBtn.classList.add('hidden');
+                analyzeBtn.disabled = true;
+            }
         } else {
             filesInfo.innerHTML = '<p><i class="fas fa-info-circle text-blue-500 mr-2"></i>No files selected</p>';
             fileList.classList.add('hidden');
-        }
-
-        // Enable analyze button only when all files are selected
-        analyzeBtn.disabled = !(uploadedFiles.json && uploadedFiles.base && uploadedFiles.before && uploadedFiles.after);
-        if (uploadedFiles.json && uploadedFiles.base && uploadedFiles.before && uploadedFiles.after) {
-            Logger.log('All files selected, enabling analyze button');
+            analyzeBtn.classList.add('hidden');
+            analyzeBtn.disabled = true;
         }
     }
 
-    // File upload button click
-    uploadFilesBtn.addEventListener('click', () => {
-        Logger.log('File upload button clicked');
-        // Call the selectFiles API directly instead of triggering file input
-        selectFilesDirectly();
-    });
+    // Reset UI to initial state
+    function resetToInitialState() {
+        // Hide analysis dashboard and show upload area
+        analysisDashboard.classList.add('hidden');
+        filesUploadArea.classList.remove('hidden');
+        
+        // Reset file info
+        uploadedFiles = {
+            json: null,
+            base: null,
+            before: null,
+            after: null
+        };
+        updateFileInfo();
+        
+        // Reset summary cards to default values
+        const cards = summaryCards.querySelectorAll('.stat-card');
+        if (cards.length >= 6) {
+            cards[0].querySelector('.stat-value').textContent = '0';
+            cards[1].querySelector('.stat-value').textContent = '0';
+            cards[2].querySelector('.stat-value').textContent = '0';
+            cards[3].querySelector('.stat-value').textContent = '0';
+            cards[4].querySelector('.stat-value').textContent = '0';
+            cards[5].querySelector('.stat-value').textContent = '0';
+        }
+        
+        // Reset validation results
+        validationResults.innerHTML = `
+            <div class="validation-item">
+                <div class="validation-header">
+                    <div class="validation-title">Base failures in P2P</div>
+                    <div class="validation-status status-pass">PASS</div>
+                </div>
+                <div class="examples">No examples found</div>
+            </div>
+            <div class="validation-item">
+                <div class="validation-header">
+                    <div class="validation-title">After failures in F2P/P2P</div>
+                    <div class="validation-status status-pass">PASS</div>
+                </div>
+                <div class="examples">No examples found</div>
+            </div>
+            <div class="validation-item">
+                <div class="validation-header">
+                    <div class="validation-title">F2P tests in before</div>
+                    <div class="validation-status status-pass">PASS</div>
+                </div>
+                <div class="examples">No examples found</div>
+            </div>
+            <div class="validation-item fail">
+                <div class="validation-header">
+                    <div class="validation-title">P2P missing in base</div>
+                    <div class="validation-status status-fail">FAIL</div>
+                </div>
+                <div class="examples">No examples found</div>
+            </div>
+        `;
+        
+        // Reset tables
+        document.querySelector('#failingTestsTable tbody').innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">No data available. Upload files and analyze to see results.</td></tr>';
+        document.querySelector('#failToPassTable tbody').innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">No data available. Upload files and analyze to see results.</td></tr>';
+        document.querySelector('#passToPassTable tbody').innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">No data available. Upload files and analyze to see results.</td></tr>';
+    }
 
-    // Direct file selection function
-    async function selectFilesDirectly() {
+    // File upload button click
+    uploadFilesBtn.addEventListener('click', async () => {
+        Logger.log('File upload button clicked');
         try {
-            Logger.log('Direct file selection initiated');
+            // Call the selectFiles API directly
             const result = await window.electronAPI.selectFiles();
             
             if (result.success) {
                 Logger.log(`Files selected: ${Object.keys(result.files).length} files identified`);
+                
+                // Reset uploaded files
+                uploadedFiles = {
+                    json: null,
+                    base: null,
+                    before: null,
+                    after: null
+                };
                 
                 // Update uploaded files
                 if (result.files.json) {
@@ -167,11 +241,93 @@ document.addEventListener('DOMContentLoaded', () => {
             Logger.error(`Exception during file selection: ${error.message}`);
             showError(error.message);
         }
-    }
+    });
 
-    // Handle file selection (this will be triggered by drag and drop)
+    // Handle drag and drop events
+    filesUploadArea.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        filesUploadArea.classList.add('border-primary');
+        filesUploadArea.classList.remove('border-gray-300');
+    });
+
+    filesUploadArea.addEventListener('dragleave', () => {
+        filesUploadArea.classList.remove('border-primary');
+        filesUploadArea.classList.add('border-gray-300');
+    });
+
+    filesUploadArea.addEventListener('drop', async (event) => {
+        event.preventDefault();
+        filesUploadArea.classList.remove('border-primary');
+        filesUploadArea.classList.add('border-gray-300');
+        
+        Logger.log('Files dropped into upload area');
+        const files = Array.from(event.dataTransfer.files);
+        
+        // Reset uploaded files
+        uploadedFiles = {
+            json: null,
+            base: null,
+            before: null,
+            after: null
+        };
+        
+        // Process dropped files
+        for (const file of files) {
+            const fileName = file.name.toLowerCase();
+            Logger.log(`Processing dropped file: ${fileName}`);
+            
+            if (fileName.endsWith('.json')) {
+                uploadedFiles.json = {
+                    name: file.name,
+                    path: file.path || file.name,
+                    size: file.size
+                };
+                Logger.log(`Identified JSON file: ${file.name}`);
+            } else if (fileName.endsWith('_base.log')) {
+                uploadedFiles.base = {
+                    name: file.name,
+                    path: file.path || file.name,
+                    size: file.size
+                };
+                Logger.log(`Identified Base Log file: ${file.name}`);
+            } else if (fileName.endsWith('_before.log')) {
+                uploadedFiles.before = {
+                    name: file.name,
+                    path: file.path || file.name,
+                    size: file.size
+                };
+                Logger.log(`Identified Before Log file: ${file.name}`);
+            } else if (fileName.endsWith('_after.log')) {
+                uploadedFiles.after = {
+                    name: file.name,
+                    path: file.path || file.name,
+                    size: file.size
+                };
+                Logger.log(`Identified After Log file: ${file.name}`);
+            }
+        }
+        
+        // Check if we have all required files
+        if (!uploadedFiles.json || !uploadedFiles.base || !uploadedFiles.before || !uploadedFiles.after) {
+            Logger.warn('Not all required files were dropped');
+            showError('Please drop all required files (JSON, _base.log, _before.log, _after.log)');
+            // Reset uploaded files
+            uploadedFiles = {
+                json: null,
+                base: null,
+                before: null,
+                after: null
+            };
+            updateFileInfo();
+            return;
+        }
+        
+        updateFileInfo();
+    });
+
+    // Handle file selection through file input (for accessibility)
     fileInput.addEventListener('change', async (event) => {
-        Logger.log('Files selected via file input (drag and drop)');
+        Logger.log('Files selected via file input');
         // Check if any files were actually selected
         if (event.target.files.length === 0) {
             Logger.warn('No files selected in change event');
@@ -179,73 +335,72 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         try {
-            // Process drag and drop files
-            const files = Array.from(event.target.files);
-            Logger.log(`Processing ${files.length} files from drag and drop`);
+            // Call the selectFiles API directly instead of processing files here
+            const result = await window.electronAPI.selectFiles();
             
-            // Create a temporary object to hold file information
-            const fileData = {
-                json: null,
-                base: null,
-                before: null,
-                after: null
-            };
-            
-            // Identify files
-            for (const file of files) {
-                const fileName = file.name.toLowerCase();
-                Logger.log(`Processing file: ${fileName}`);
+            if (result.success) {
+                Logger.log(`Files selected: ${Object.keys(result.files).length} files identified`);
                 
-                if (fileName.endsWith('.json')) {
-                    fileData.json = {
-                        name: file.name,
-                        path: file.path || file.name,
-                        size: file.size
+                // Reset uploaded files
+                uploadedFiles = {
+                    json: null,
+                    base: null,
+                    before: null,
+                    after: null
+                };
+                
+                // Update uploaded files
+                if (result.files.json) {
+                    uploadedFiles.json = {
+                        name: result.files.json.split('\\').pop().split('/').pop(),
+                        path: result.files.json,
+                        size: 0
                     };
-                    Logger.log(`Identified JSON file: ${file.name}`);
-                } else if (fileName.endsWith('_base.log')) {
-                    fileData.base = {
-                        name: file.name,
-                        path: file.path || file.name,
-                        size: file.size
-                    };
-                    Logger.log(`Identified Base Log file: ${file.name}`);
-                } else if (fileName.endsWith('_before.log')) {
-                    fileData.before = {
-                        name: file.name,
-                        path: file.path || file.name,
-                        size: file.size
-                    };
-                    Logger.log(`Identified Before Log file: ${file.name}`);
-                } else if (fileName.endsWith('_after.log')) {
-                    fileData.after = {
-                        name: file.name,
-                        path: file.path || file.name,
-                        size: file.size
-                    };
-                    Logger.log(`Identified After Log file: ${file.name}`);
                 }
+                
+                if (result.files.base) {
+                    uploadedFiles.base = {
+                        name: result.files.base.split('\\').pop().split('/').pop(),
+                        path: result.files.base,
+                        size: 0
+                    };
+                }
+                
+                if (result.files.before) {
+                    uploadedFiles.before = {
+                        name: result.files.before.split('\\').pop().split('/').pop(),
+                        path: result.files.before,
+                        size: 0
+                    };
+                }
+                
+                if (result.files.after) {
+                    uploadedFiles.after = {
+                        name: result.files.after.split('\\').pop().split('/').pop(),
+                        path: result.files.after,
+                        size: 0
+                    };
+                }
+                
+                updateFileInfo();
+            } else {
+                Logger.error(`Failed to select files: ${result.error || 'Unknown error'}`);
+                showError(result.error || 'Failed to select files');
             }
-            
-            // Check if we have all required files
-            if (!fileData.json || !fileData.base || !fileData.before || !fileData.after) {
-                Logger.warn('Not all required files were selected via drag and drop');
-                showError('Please select all required files (JSON, _base.log, _before.log, _after.log)');
-                return;
-            }
-            
-            // Update uploaded files
-            uploadedFiles = fileData;
-            updateFileInfo();
         } catch (error) {
-            Logger.error(`Exception during drag and drop file processing: ${error.message}`);
+            Logger.error(`Exception during file selection: ${error.message}`);
             showError(error.message);
+        } finally {
+            // Reset the file input value to allow selecting the same files again
+            fileInput.value = '';
         }
     });
 
     // Analyze files
     analyzeBtn.addEventListener('click', async () => {
         Logger.log('Analyze button clicked');
+        Logger.log(`Uploaded files status: JSON=${!!uploadedFiles.json}, Base=${!!uploadedFiles.base}, Before=${!!uploadedFiles.before}, After=${!!uploadedFiles.after}`);
+        
         if (!uploadedFiles.json || !uploadedFiles.base || !uploadedFiles.before || !uploadedFiles.after) {
             Logger.warn('Attempted to analyze without all files selected');
             showError('Please select all required files (JSON, _base.log, _before.log, _after.log)');
@@ -254,7 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Show loading, hide other sections
         Logger.log('Showing loading section');
-        document.querySelector('.main-content').classList.add('hidden');
+        filesUploadArea.classList.add('hidden');
         loadingSection.classList.remove('hidden');
         errorSection.classList.add('hidden');
 
@@ -267,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 Logger.log('Analysis successful, displaying results');
                 displayResults(result.data);
                 loadingSection.classList.add('hidden');
-                document.querySelector('.main-content').classList.remove('hidden');
+                analysisDashboard.classList.remove('hidden');
                 
                 // Reset uploaded files
                 uploadedFiles = { json: null, base: null, before: null, after: null };
@@ -277,20 +432,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 Logger.error(`Analysis failed: ${error}`);
                 showError(error);
                 loadingSection.classList.add('hidden');
+                filesUploadArea.classList.remove('hidden');
                 errorSection.classList.remove('hidden');
             }
         } catch (error) {
             Logger.error(`Exception during analysis: ${error.message}`);
             showError(error.message);
             loadingSection.classList.add('hidden');
+            filesUploadArea.classList.remove('hidden');
             errorSection.classList.remove('hidden');
         }
+    });
+
+    // Analyze another file button click
+    analyzeAnotherBtn.addEventListener('click', () => {
+        Logger.log('Analyze another file button clicked');
+        resetToInitialState();
     });
 
     backBtn.addEventListener('click', () => {
         Logger.log('Back button clicked in error section');
         errorSection.classList.add('hidden');
-        document.querySelector('.main-content').classList.remove('hidden');
+        filesUploadArea.classList.remove('hidden');
     });
 
     function displayResults(data) {
