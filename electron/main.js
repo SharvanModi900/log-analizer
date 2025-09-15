@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, nativeImage, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, nativeImage, Menu, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
@@ -34,7 +34,46 @@ let uploadedFiles = {
 
 Logger.log('Application starting');
 
-const createWindow = () => {
+// Global reference to the splash window
+let splashWindow;
+let mainWindow;
+
+const createSplashWindow = () => {
+  Logger.log('Creating splash window');
+  
+  // Get screen dimensions
+  const mainScreen = screen.getPrimaryDisplay();
+  const dimensions = mainScreen.size;
+  
+  splashWindow = new BrowserWindow({
+    width: 500,
+    height: 400,
+    x: (dimensions.width - 500) / 2,
+    y: (dimensions.height - 400) / 2,
+    transparent: false,
+    frame: false,
+    resizable: false,
+    movable: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true
+    },
+    backgroundColor: '#0f172a'
+  });
+
+  splashWindow.loadFile(path.join(__dirname, 'splash.html'));
+  
+  // Prevent splash window from being closed by user
+  splashWindow.on('close', (event) => {
+    if (mainWindow) {
+      splashWindow = null;
+    } else {
+      event.preventDefault();
+    }
+  });
+};
+
+const createMainWindow = () => {
   Logger.log('Creating main window');
   
   // Define the icon path - using our custom icon
@@ -56,7 +95,7 @@ const createWindow = () => {
   }
   
   // Create the browser window with premium dimensions
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
     minWidth: 1000,
@@ -75,7 +114,8 @@ const createWindow = () => {
     transparent: false,
     backgroundColor: '#0f172a',
     // Set the icon for the application window
-    icon: appIcon || iconPath
+    icon: appIcon || iconPath,
+    show: false // Don't show the main window immediately
   });
 
   // Remove the default menu bar
@@ -85,6 +125,28 @@ const createWindow = () => {
   // and load the index.html of the app.
   Logger.log('Loading index.html');
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
+
+  // Show main window when it's ready
+  mainWindow.once('ready-to-show', () => {
+    Logger.log('Main window ready to show');
+    // Close splash screen
+    if (splashWindow) {
+      Logger.log('Closing splash window');
+      splashWindow.destroy(); // Use destroy instead of close for immediate removal
+      splashWindow = null;
+    }
+    
+    // Show main window
+    Logger.log('Showing main window');
+    mainWindow.show();
+    mainWindow.focus();
+  });
+
+  // Handle main window close
+  mainWindow.on('closed', () => {
+    Logger.log('Main window closed');
+    mainWindow = null;
+  });
 
   // Open the DevTools for debugging
   // mainWindow.webContents.openDevTools();
@@ -105,7 +167,13 @@ app.on('ready', () => {
     }
   }
   
-  createWindow();
+  // Create splash screen first
+  createSplashWindow();
+  
+  // Create main window after a short delay to show splash screen
+  setTimeout(() => {
+    createMainWindow();
+  }, 2000); // Show splash for at least 2 seconds
 });
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -113,6 +181,7 @@ app.on('ready', () => {
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   Logger.log('All windows closed');
+  // Only quit if the main window was closed, not just the splash screen
   if (process.platform !== 'darwin') {
     Logger.log('Quitting application');
     app.quit();
@@ -124,7 +193,10 @@ app.on('activate', () => {
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
+    createSplashWindow();
+    setTimeout(() => {
+      createMainWindow();
+    }, 2000);
   }
 });
 

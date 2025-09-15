@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';">
+    <title>Loading...</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Poppins', sans-serif;
+            overflow: hidden;
+        }
+        
+        .splash-container {
+            text-align: center;
+            color: #f1f5f9;
+            position: relative;
+            z-index: 2;
+            /* Added padding to create better visual balance */
+            padding: 3rem 2rem 2rem 2rem;
+        }
+        
+        .logo-container {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin: 0 auto 2rem;
+        }
+        
+        .logo-orbit {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid rgba(99, 102, 241, 0.2);
+            animation: orbit-rotate 8s linear infinite;
+        }
+        
+        .logo-orbit:nth-child(2) {
+            animation-duration: 12s;
+            border-color: rgba(139, 92, 246, 0.2);
+            width: 120%;
+            height: 120%;
+            top: -10%;
+            left: -10%;
+        }
+        
+        .logo-orbit:nth-child(3) {
+            animation-duration: 16s;
+            border-color: rgba(236, 72, 153, 0.2);
+            width: 140%;
+            height: 140%;
+            top: -20%;
+            left: -20%;
+        }
+        
+        .logo-core {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
+            box-shadow: 0 0 40px rgba(99, 102, 241, 0.8);
+            animation: pulse 2s infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 3;
+        }
+        
+        .logo-icon {
+            width: 70%;
+            height: 70%;
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
+        }
+        
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        .particle {
+            position: absolute;
+            background: rgba(99, 102, 241, 0.6);
+            border-radius: 50%;
+            animation: float 15s infinite linear;
+        }
+        
+        .particle:nth-child(2n) {
+            background: rgba(139, 92, 246, 0.6);
+        }
+        
+        .particle:nth-child(3n) {
+            background: rgba(236, 72, 153, 0.6);
+        }
+        
+        .app-name {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(90deg, #f8fafc 0%, #e2e8f0 50%, #f8fafc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+            letter-spacing: 1px;
+        }
+        
+        .tagline {
+            font-size: 1.2rem;
+            color: #c7d2fe;
+            margin-bottom: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+        
+        .loading-container {
+            position: relative;
+            width: 300px;
+            height: 6px;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 3px;
+            margin: 0 auto;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .loading-bar {
+            position: absolute;
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899);
+            border-radius: 3px;
+            animation: loading 3s ease-in-out infinite;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.7);
+        }
+        
+        .loading-text {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-top: 1.5rem;
+            font-weight: 300;
+        }
+        
+        @keyframes orbit-rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes pulse {
+            0% { 
+                transform: translate(-50%, -50%) scale(1);
+                box-shadow: 0 0 40px rgba(99, 102, 241, 0.8);
+            }
+            50% { 
+                transform: translate(-50%, -50%) scale(1.05);
+                box-shadow: 0 0 60px rgba(139, 92, 246, 0.9);
+            }
+            100% { 
+                transform: translate(-50%, -50%) scale(1);
+                box-shadow: 0 0 40px rgba(99, 102, 241, 0.8);
+            }
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translate(100px, -100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes loading {
+            0% { width: 0%; }
+            30% { width: 40%; }
+            60% { width: 75%; }
+            100% { width: 100%; }
+        }
+        
+        .glow {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, transparent 70%);
+            filter: blur(20px);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 0;
+            animation: glow-pulse 4s infinite alternate;
+        }
+        
+        @keyframes glow-pulse {
+            0% { opacity: 0.3; }
+            100% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body>
+    <div class="glow"></div>
+    
+    <div class="particles" id="particles"></div>
+    
+    <div class="splash-container">
+        <div class="logo-container">
+            <div class="logo-orbit"></div>
+            <div class="logo-orbit"></div>
+            <div class="logo-orbit"></div>
+            <div class="logo-core">
+                <!-- Using inline SVG instead of external file to avoid path issues -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" class="logo-icon">
+                  <circle cx="512" cy="512" r="512" fill="#6366f1"/>
+                  <circle cx="512" cy="512" r="400" fill="none" stroke="#8b5cf6" stroke-width="40"/>
+                  <circle cx="512" cy="512" r="300" fill="none" stroke="#ec4899" stroke-width="40"/>
+                  <circle cx="512" cy="512" r="150" fill="#f8fafc"/>
+                  <circle cx="512" cy="512" r="50" fill="#6366f1"/>
+                </svg>
+            </div>
+        </div>
+        
+        <h1 class="app-name">LOG ANALYZER</h1>
+        <p class="tagline">Advanced Rust Test Analysis Suite</p>
+        
+        <div class="loading-container">
+            <div class="loading-bar"></div>
+        </div>
+        <p class="loading-text">Initializing application modules...</p>
+    </div>
+
+    <script>
+        // Create floating particles
+        document.addEventListener('DOMContentLoaded', function() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Random size
+                const size = Math.random() * 5 + 1;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                // Random position
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${Math.random() * 100}%`;
+                
+                // Random animation duration
+                const duration = Math.random() * 20 + 10;
+                particle.style.animationDuration = `${duration}s`;
+                
+                // Random delay
+                const delay = Math.random() * 5;
+                particle.style.animationDelay = `${delay}s`;
+                
+                particlesContainer.appendChild(particle);
+            }
+        });
+    </script>
+</body>
+</html>
