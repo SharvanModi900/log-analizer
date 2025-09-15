@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com; style-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com;">
     <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com; style-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com;">
-    <title>Rust Test Log Analyzer</title>
+    <title>LA Tool</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -48,7 +48,7 @@
         }
         
         .dashboard {
-            max-width: 1400px;
+            max-width: 80vw;
             margin: 0 auto;
             position: relative;
             z-index: 1;
@@ -1194,6 +1194,18 @@
             display: block !important;
         }
         
+        /* Custom icon styling */
+        .section-title img {
+            display: inline-block;
+            vertical-align: middle;
+            border-radius: 8px;
+        }
+        
+        .logo-icon img {
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+        }
+        
         /* Ensure only one main section is visible at a time */
         .section:not(#analysisDashboard).hidden {
             display: none;
@@ -1210,10 +1222,10 @@
             <div class="header-content">
                 <div class="logo">
                     <div class="logo-icon floating">
-                        <i class="fas fa-chart-line"></i>
+                        <img src="./app-icon.svg" alt="App Icon" class="inline-block w-12 h-12">
                     </div>
                     <div class="logo-text">
-                        <h1>Rust Test Log Analyzer</h1>
+                        <h1>LA Tool</h1>
                         <p>Advanced analysis for Rust test results</p>
                     </div>
                 </div>
@@ -1267,6 +1279,7 @@
                     <div class="section hidden" id="analysisDashboard">
                         <div class="flex justify-between items-center mb-6">
                             <h2 class="section-title">
+                               
                                 <i class="fas fa-chart-bar"></i> Analysis Dashboard
                             </h2>
                            
@@ -1343,6 +1356,7 @@
                             
                             <div class="section">
                                 <h3 class="section-title">
+                                    <img src="app-icon.png" alt="App Icon" class="inline-block w-6 h-6 mr-3">
                                     <i class="fas fa-clipboard-check"></i> Validation Results
                                 </h3>
                                 
@@ -1352,28 +1366,28 @@
                                             <div class="validation-title">Base failures in P2P</div>
                                             <div class="validation-status status-pass">PASS</div>
                                         </div>
-                                        <div class="examples">No examples found</div>
+                                        <div class="examples">No test case found</div>
                                     </div>
                                     <div class="validation-item">
                                         <div class="validation-header">
                                             <div class="validation-title">After failures in F2P/P2P</div>
                                             <div class="validation-status status-pass">PASS</div>
                                         </div>
-                                        <div class="examples">No examples found</div>
+                                        <div class="examples">No test case found</div>
                                     </div>
                                     <div class="validation-item">
                                         <div class="validation-header">
                                             <div class="validation-title">F2P tests in before</div>
                                             <div class="validation-status status-pass">PASS</div>
                                         </div>
-                                        <div class="examples">No examples found</div>
+                                        <div class="examples">No test case found</div>
                                     </div>
                                     <div class="validation-item fail">
                                         <div class="validation-header">
                                             <div class="validation-title">P2P missing in base</div>
                                             <div class="validation-status status-fail">FAIL</div>
                                         </div>
-                                        <div class="examples">No examples found</div>
+                                        <div class="examples">No test case found</div>
                                     </div>
                                 </div>
                             </div>
@@ -1542,28 +1556,28 @@
                                             <div class="validation-title">Base failures in P2P</div>
                                             <div class="validation-status status-pass">PASS</div>
                                         </div>
-                                        <div class="examples">No examples found</div>
+                                        <div class="examples">No test case found</div>
                                     </div>
                                     <div class="validation-item">
                                         <div class="validation-header">
                                             <div class="validation-title">After failures in F2P/P2P</div>
                                             <div class="validation-status status-pass">PASS</div>
                                         </div>
-                                        <div class="examples">No examples found</div>
+                                        <div class="examples">No test case found</div>
                                     </div>
                                     <div class="validation-item">
                                         <div class="validation-header">
                                             <div class="validation-title">F2P tests in before</div>
                                             <div class="validation-status status-pass">PASS</div>
                                         </div>
-                                        <div class="examples">No examples found</div>
+                                        <div class="examples">No test case found</div>
                                     </div>
                                     <div class="validation-item fail">
                                         <div class="validation-header">
                                             <div class="validation-title">P2P missing in base</div>
                                             <div class="validation-status status-fail">FAIL</div>
                                         </div>
-                                        <div class="examples">No examples found</div>
+                                        <div class="examples">No test case found</div>
                                     </div>
                                 </div>
                             </div>

@@ -911,7 +911,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="examples">${result.examples && result.examples.length > 0 ? 
                     `Examples: ${result.examples.slice(0, 3).join(', ')}${result.examples.length > 3 ? '...' : ''}` : 
-                    'No examples found'}</div>
+                    'No test case found'}</div>
             `;
             
             // Add smooth transition for staggered appearance

@@ -1,7 +1,15 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, nativeImage, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
+
+// Set the app icon as early as possible
+if (process.platform === 'win32') {
+  const iconPath = path.resolve(__dirname, 'app-icon.ico');
+  if (fs.existsSync(iconPath)) {
+    app.setAppUserModelId('com.loganalyzer.rust');
+  }
+}
 
 // Simple logging utility
 const Logger = {
@@ -28,6 +36,25 @@ Logger.log('Application starting');
 
 const createWindow = () => {
   Logger.log('Creating main window');
+  
+  // Define the icon path - using our custom icon
+  const iconPath = path.resolve(__dirname, 'app-icon.ico');
+  Logger.log(`Icon path: ${iconPath}`);
+  Logger.log(`Icon exists: ${fs.existsSync(iconPath)}`);
+  
+  // Load the icon
+  let appIcon = null;
+  if (fs.existsSync(iconPath)) {
+    try {
+      appIcon = nativeImage.createFromPath(iconPath);
+      Logger.log(`Icon loaded successfully. Size: ${appIcon.getSize().width}x${appIcon.getSize().height}`);
+    } catch (error) {
+      Logger.error(`Failed to load icon: ${error.message}`);
+    }
+  } else {
+    Logger.warn('Custom icon file not found, falling back to default');
+  }
+  
   // Create the browser window with premium dimensions
   const mainWindow = new BrowserWindow({
     width: 1400,
@@ -46,8 +73,14 @@ const createWindow = () => {
     // Add rounded corners and shadow
     hasShadow: true,
     transparent: false,
-    backgroundColor: '#0f172a'
+    backgroundColor: '#0f172a',
+    // Set the icon for the application window
+    icon: appIcon || iconPath
   });
+
+  // Remove the default menu bar
+  mainWindow.setMenuBarVisibility(false);
+  Menu.setApplicationMenu(null);
 
   // and load the index.html of the app.
   Logger.log('Loading index.html');
@@ -62,6 +95,16 @@ const createWindow = () => {
 // Some APIs can only be used after this event occurs.
 app.on('ready', () => {
   Logger.log('Application ready');
+  
+  // Set the app icon for Windows
+  if (process.platform === 'win32') {
+    const iconPath = path.resolve(__dirname, 'app-icon.ico');
+    if (fs.existsSync(iconPath)) {
+      app.setAppUserModelId('com.loganalyzer.rust');
+      // Set the icon for the taskbar and Start Menu
+    }
+  }
+  
   createWindow();
 });
 

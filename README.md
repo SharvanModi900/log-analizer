@@ -75,6 +75,32 @@ To build the application for distribution:
 npm run build
 ```
 
+## Customizing the Application Icon
+
+To change the application icon:
+
+1. Modify the [icon.svg](file:///d:/turing/log-analyzer/icon.svg) file in the root directory
+2. The current icon design has no text, which makes it appear cleaner and larger in the taskbar
+3. Convert the SVG to PNG using one of these methods:
+   - Open [icon-preview.html](file:///d:/turing/log-analyzer/icon-preview.html) in a browser, take a screenshot and save as [icon.png](file:///d:/turing/log-analyzer/icon.png) (1024x1024)
+   - Use an online converter like https://svgtopng.com/
+   - Use an image editor like Inkscape or Adobe Illustrator
+4. Run the following command to generate platform-specific icons:
+   ```
+   npm run build-icons
+   ```
+5. The icons will be automatically generated and copied to the appropriate directories:
+   - Windows: `build/icons/win/icon.ico`
+   - macOS: `build/icons/mac/icon.icns`
+   - Linux: `build/icons/png/1024x1024.png`
+
+6. Rebuild the application:
+   ```
+   npm run dist
+   ```
+
+The application will now use your custom icon without text in the taskbar, Start Menu, and installer, making it appear larger and cleaner.
+
 ## License
 
 MIT

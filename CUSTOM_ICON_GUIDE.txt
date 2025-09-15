@@ -1,0 +1,55 @@
+
+FINAL STEP-BY-STEP GUIDE TO CREATE YOUR CUSTOM TASKBAR ICON
+=========================================================
+
+CURRENT STATUS:
+- Your icon.svg has been updated to remove text (making it appear larger)
+- Placeholder files have been created but won't show in the taskbar
+
+TO CREATE A WORKING ICO FILE:
+----------------------------
+
+STEP 1: CONVERT YOUR SVG TO PNG
+1. Make sure convert-svg-to-png.html is open in your browser
+2. Click the "Convert to PNG" button
+3. Right-click on the converted image on the right side
+4. Select "Save Image As..."
+5. Save as "icon.png" in your project root directory (d:\turing\log-analyzer)
+
+STEP 2: CONVERT PNG TO ICO
+1. Go to this website: https://convertICO.com
+2. Click "Choose File" and select your new icon.png
+3. Click "Convert to ICO"
+4. Click "Download ICO file"
+5. Save the downloaded file as "icon.ico"
+6. Move it to: build/icons/win/icon.ico
+
+STEP 3: REPLACE PLACEHOLDER FILES
+1. Copy your icon.png to: build/icons/png/1024x1024.png
+2. For macOS, you'll need an ICNS file (use https://cloudconvert.com/png-to-icns)
+
+STEP 4: TEST YOUR NEW ICON
+1. Close any running instance of your application
+2. Run: npm start
+3. Look at the taskbar - you should now see your custom icon!
+
+TROUBLESHOOTING:
+---------------
+If you still see the default Electron icon:
+1. Close the application completely
+2. Restart Windows Explorer (Task Manager > Processes > Windows Explorer > Restart)
+3. Or simply reboot your computer
+4. Run the application again
+
+BENEFITS OF YOUR NEW ICON:
+-------------------------
+✓ Larger appearance (no text making it tiny)
+✓ Cleaner design
+✓ Professional look
+✓ Better brand recognition
+
+IMPORTANT NOTES:
+---------------
+- The ICO file must contain valid image data to show in the taskbar
+- A minimal or placeholder ICO file will be loaded but not displayed
+- Windows caches icons, so you may need to restart Explorer or reboot

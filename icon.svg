@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Background circle -->
+  <circle cx="512" cy="512" r="512" fill="#6366f1"/>
+  
+  <!-- Outer ring -->
+  <circle cx="512" cy="512" r="400" fill="none" stroke="#8b5cf6" stroke-width="40"/>
+  
+  <!-- Middle ring -->
+  <circle cx="512" cy="512" r="300" fill="none" stroke="#ec4899" stroke-width="40"/>
+  
+  <!-- Inner circle -->
+  <circle cx="512" cy="512" r="150" fill="#f8fafc"/>
+  
+  <!-- Center dot -->
+  <circle cx="512" cy="512" r="50" fill="#6366f1"/>
+</svg>

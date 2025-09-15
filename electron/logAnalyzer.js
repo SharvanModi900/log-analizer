@@ -28,6 +28,7 @@ async function analyzeLogs(zipFilePath) {
                 if (file.endsWith('_base.log')) baseLog = path.join(tempDir, file);
                 if (file.endsWith('_before.log')) beforeLog = path.join(tempDir, file);
                 if (file.endsWith('_after.log')) afterLog = path.join(tempDir, file);
+                if (file.endsWith('.json')) jsonFile = path.join(tempDir, file);
                
             });
 
