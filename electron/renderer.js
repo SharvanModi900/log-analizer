@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     Logger.log('DOM content loaded, initializing application');
     
     const uploadFilesBtn = document.getElementById('uploadFilesBtn');
+    const uploadZipBtn = document.getElementById('uploadZipBtn'); // Add ZIP upload button
     const fileInput = document.getElementById('fileInput');
     const analyzeBtn = document.getElementById('analyzeBtn');
     const filesUploadArea = document.getElementById('filesUploadArea');
@@ -490,6 +491,70 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // ZIP upload button click
+    uploadZipBtn.addEventListener('click', async () => {
+        Logger.log('ZIP upload button clicked');
+        try {
+            // Add animation to button
+            uploadZipBtn.classList.add('pulse');
+            setTimeout(() => {
+                uploadZipBtn.classList.remove('pulse');
+            }, 500);
+            
+            // Call the selectZip API
+            const result = await window.electronAPI.selectZip();
+            
+            Logger.log(`ZIP selection result: ${JSON.stringify(result)}`);
+            
+            if (result.success) {
+                Logger.log(`ZIP file processed: ${result.message}`);
+                
+                // Update uploaded files from the extracted files
+                if (result.files.json) {
+                    uploadedFiles.json = {
+                        name: result.files.json.name,
+                        path: result.files.json.path,
+                        size: result.files.json.size
+                    };
+                }
+                
+                if (result.files.base) {
+                    uploadedFiles.base = {
+                        name: result.files.base.name,
+                        path: result.files.base.path,
+                        size: result.files.base.size
+                    };
+                }
+                
+                if (result.files.before) {
+                    uploadedFiles.before = {
+                        name: result.files.before.name,
+                        path: result.files.before.path,
+                        size: result.files.before.size
+                    };
+                }
+                
+                if (result.files.after) {
+                    uploadedFiles.after = {
+                        name: result.files.after.name,
+                        path: result.files.after.path,
+                        size: result.files.after.size
+                    };
+                }
+                
+                Logger.log(`After processing ZIP, uploadedFiles: JSON=${!!uploadedFiles.json}, Base=${!!uploadedFiles.base}, Before=${!!uploadedFiles.before}, After=${!!uploadedFiles.after}`);
+                
+                updateFileInfo();
+            } else {
+                Logger.error(`Failed to process ZIP: ${result.error || 'Unknown error'}`);
+                showError(result.error || 'Failed to process ZIP file');
+            }
+        } catch (error) {
+            Logger.error(`Exception during ZIP processing: ${error.message}`);
+            showError(error.message);
+        }
+    });
+
     // Handle drag and drop events
     filesUploadArea.addEventListener('dragover', (event) => {
         event.preventDefault();
@@ -511,6 +576,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const files = Array.from(event.dataTransfer.files);
         
         Logger.log(`Number of files dropped: ${files.length}`);
+        
+        // Check if any of the dropped files is a ZIP file
+        const zipFiles = files.filter(file => file.name.toLowerCase().endsWith('.zip'));
+        if (zipFiles.length > 0) {
+            // Handle ZIP file
+            await handleZipFile(zipFiles[0]);
+            return;
+        }
         
         // Process dropped files (preserve previously selected files)
         for (const file of files) {
@@ -564,8 +637,18 @@ document.addEventListener('DOMContentLoaded', () => {
         
         Logger.log(`Number of files selected: ${event.target.files.length}`);
         
-        // Process selected files directly from the file input (preserve previously selected files)
+        // Check if any of the selected files is a ZIP file
         const files = Array.from(event.target.files);
+        const zipFiles = files.filter(file => file.name.toLowerCase().endsWith('.zip'));
+        if (zipFiles.length > 0) {
+            // Handle ZIP file
+            await handleZipFile(zipFiles[0]);
+            // Reset the file input value to allow selecting the same files again
+            fileInput.value = '';
+            return;
+        }
+        
+        // Process selected files directly from the file input (preserve previously selected files)
         for (const file of files) {
             const fileName = file.name.toLowerCase();
             Logger.log(`Processing file from input: ${fileName}`);
@@ -608,6 +691,64 @@ document.addEventListener('DOMContentLoaded', () => {
         // Reset the file input value to allow selecting the same files again
         fileInput.value = '';
     });
+
+    // Handle ZIP file processing
+    async function handleZipFile(zipFile) {
+        Logger.log(`Processing ZIP file: ${zipFile.name}`);
+        try {
+            // Call the selectZip API with the file path
+            const result = await window.electronAPI.selectZip(zipFile.path);
+            
+            Logger.log(`ZIP processing result: ${JSON.stringify(result)}`);
+            
+            if (result.success) {
+                Logger.log(`ZIP file processed: ${result.message}`);
+                
+                // Update uploaded files from the extracted files
+                if (result.files.json) {
+                    uploadedFiles.json = {
+                        name: result.files.json.name,
+                        path: result.files.json.path,
+                        size: result.files.json.size
+                    };
+                }
+                
+                if (result.files.base) {
+                    uploadedFiles.base = {
+                        name: result.files.base.name,
+                        path: result.files.base.path,
+                        size: result.files.base.size
+                    };
+                }
+                
+                if (result.files.before) {
+                    uploadedFiles.before = {
+                        name: result.files.before.name,
+                        path: result.files.before.path,
+                        size: result.files.before.size
+                    };
+                }
+                
+                if (result.files.after) {
+                    uploadedFiles.after = {
+                        name: result.files.after.name,
+                        path: result.files.after.path,
+                        size: result.files.after.size
+                    };
+                }
+                
+                Logger.log(`After processing ZIP, uploadedFiles: JSON=${!!uploadedFiles.json}, Base=${!!uploadedFiles.base}, Before=${!!uploadedFiles.before}, After=${!!uploadedFiles.after}`);
+                
+                updateFileInfo();
+            } else {
+                Logger.error(`Failed to process ZIP: ${result.error || 'Unknown error'}`);
+                showError(result.error || 'Failed to process ZIP file');
+            }
+        } catch (error) {
+            Logger.error(`Exception during ZIP processing: ${error.message}`);
+            showError(error.message);
+        }
+    }
 
     // Handle click on upload area to trigger file input
     filesUploadArea.addEventListener('click', (event) => {

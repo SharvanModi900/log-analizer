@@ -139,7 +139,6 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
 .envrc
 .venv
 env/
@@ -239,7 +238,6 @@ dist-electron/
 .yarn-integrity
 
 # dotenv environment variables file
-.env.local
 .env.development.local
 .env.test.local
 .env.production.local
@@ -280,3 +278,4 @@ dist-electron/
 
 # Git config
 .gitattributes
+config.bat
