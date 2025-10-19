@@ -6,6 +6,6 @@ const { contextBridge, ipcRenderer } = require('electron');
 // and node integration
 contextBridge.exposeInMainWorld('electronAPI', {
   selectFiles: () => ipcRenderer.invoke('select-files'),
-  analyzeFiles: () => ipcRenderer.invoke('analyze-files'),
+  analyzeFiles: (language) => ipcRenderer.invoke('analyze-files', language),
   resetFiles: () => ipcRenderer.invoke('reset-files')
 });

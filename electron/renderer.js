@@ -33,6 +33,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const analyzeAnotherBtn = document.getElementById('analyzeAnotherBtn');
     const instructionsSection = document.getElementById('instructionsSection');
     
+    // Language selection
+    const languageSelect = document.getElementById('languageSelect');
+    
     // Full screen elements
     const fullscreenBtn = document.getElementById('fullscreenBtn');
     const fullScreenDashboard = document.getElementById('fullScreenDashboard');
@@ -179,39 +182,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetToInitialState() {
         // Hide analysis dashboard and show upload section
         analysisDashboard.classList.add('hidden');
-        // Find the upload section and show it
-        const uploadSection = document.querySelector('.section:not(#analysisDashboard)');
+        // Find the upload section and show it (but keep instructions visible)
+        const uploadSection = document.querySelector('.section:not(#analysisDashboard):not(#instructionsSection)');
         if (uploadSection) {
             uploadSection.classList.remove('hidden');
-        }
-        
-        // Show instructions section again when resetting
-        const instructionsSection = document.getElementById('instructionsSection');
-        if (instructionsSection) {
-            instructionsSection.classList.remove('hidden');
-        }
-        
-        // Switch to instructions tab in sidebar
-        // Hide all sidebar tab contents
-        sidebarTabContents.forEach(content => {
-            content.classList.remove('active');
-        });
-        
-        // Remove active class from all sidebar tabs
-        sidebarTabs.forEach(tab => {
-            tab.classList.remove('active');
-        });
-        
-        // Show instructions tab content
-        const instructionsTabContent = document.getElementById('instructionsTab');
-        if (instructionsTabContent) {
-            instructionsTabContent.classList.add('active');
-        }
-        
-        // Add active class to instructions tab
-        const instructionsTab = document.querySelector('.sidebar .tab[data-tab="instructions"]');
-        if (instructionsTab) {
-            instructionsTab.classList.add('active');
         }
         
         // Reset file info
@@ -436,19 +410,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadAnalysis(id) {
         const analysis = recentAnalyses.find(a => a.id === id);
         if (analysis) {
-            // Hide upload section and show analysis dashboard
-            const uploadSection = document.querySelector('.section:not(#analysisDashboard)');
+            // Hide upload section but keep instructions visible and show analysis dashboard
+            const uploadSection = document.querySelector('.section:not(#analysisDashboard):not(#instructionsSection)');
             if (uploadSection) {
                 uploadSection.classList.add('hidden');
             }
             analysisDashboard.classList.remove('hidden');
             analysisDashboard.style.display = 'block';
-            
-            // Hide instructions section when loading analysis
-            const instructionsSection = document.getElementById('instructionsSection');
-            if (instructionsSection) {
-                instructionsSection.classList.add('hidden');
-            }
             
             // Display the analysis data
             displayResults(analysis.data);
@@ -662,25 +630,21 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Show loading, hide other sections
+        // Show loading, hide other sections except instructions
         Logger.log('Showing loading section');
-        // Hide the upload section
-        const uploadSection = document.querySelector('.section:not(#analysisDashboard)');
+        // Hide the upload section but keep instructions visible
+        const uploadSection = document.querySelector('.section:not(#analysisDashboard):not(#instructionsSection)');
         if (uploadSection) {
             uploadSection.classList.add('hidden');
         }
         loadingSection.classList.remove('hidden');
         errorSection.classList.add('hidden');
-        
-        // Hide instructions section when starting analysis
-        const instructionsSection = document.getElementById('instructionsSection');
-        if (instructionsSection) {
-            instructionsSection.classList.add('hidden');
-        }
 
         try {
-            Logger.log('Calling analyzeFiles API');
-            const result = await window.electronAPI.analyzeFiles();
+            // Get selected language
+            const selectedLanguage = languageSelect.value;
+            Logger.log(`Calling analyzeFiles API with language: ${selectedLanguage}`);
+            const result = await window.electronAPI.analyzeFiles(selectedLanguage);
             Logger.log(`Analysis result received, success: ${result.success}`);
             
             if (result.success && result.data.success) {
@@ -706,33 +670,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 Logger.error(`Analysis failed: ${error}`);
                 showError(error);
                 loadingSection.classList.add('hidden');
-                // Show upload section again
+                // Show upload section again but keep instructions visible
+                const uploadSection = document.querySelector('.section:not(#analysisDashboard):not(#instructionsSection)');
                 if (uploadSection) {
                     uploadSection.classList.remove('hidden');
                 }
                 analysisDashboard.classList.add('hidden');
-                
-                // Show instructions again if analysis fails
-                if (instructionsSection) {
-                    instructionsSection.classList.remove('hidden');
-                }
             }
         } catch (error) {
             Logger.error(`Exception during analysis: ${error.message}`);
             showError(error.message);
             loadingSection.classList.add('hidden');
-            // Show upload section again
+            // Show upload section again but keep instructions visible
+            const uploadSection = document.querySelector('.section:not(#analysisDashboard):not(#instructionsSection)');
             if (uploadSection) {
                 uploadSection.classList.remove('hidden');
             }
             errorSection.classList.remove('hidden');
             analysisDashboard.classList.add('hidden');
-            
-            // Show instructions again if analysis fails
-            const instructionsSection = document.getElementById('instructionsSection');
-            if (instructionsSection) {
-                instructionsSection.classList.remove('hidden');
-            }
         }
     });
 
@@ -799,8 +754,8 @@ document.addEventListener('DOMContentLoaded', () => {
     backBtn.addEventListener('click', () => {
         Logger.log('Back button clicked in error section');
         errorSection.classList.add('hidden');
-        // Show the upload section
-        const uploadSection = document.querySelector('.section:not(#analysisDashboard)');
+        // Show the upload section but keep instructions visible
+        const uploadSection = document.querySelector('.section:not(#analysisDashboard):not(#instructionsSection)');
         if (uploadSection) {
             uploadSection.classList.remove('hidden');
         }
@@ -812,16 +767,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Make sure the analysis dashboard is visible and upload section is hidden
         analysisDashboard.classList.remove('hidden');
         analysisDashboard.style.display = 'block';
-        // Hide the upload section
-        const uploadSection = document.querySelector('.section:not(#analysisDashboard)');
+        // Hide the upload section but keep instructions visible
+        const uploadSection = document.querySelector('.section:not(#analysisDashboard):not(#instructionsSection)');
         if (uploadSection) {
             uploadSection.classList.add('hidden');
-        }
-        
-        // Hide the instructions section in the sidebar when showing analysis
-        const instructionsSection = document.getElementById('instructionsSection');
-        if (instructionsSection) {
-            instructionsSection.classList.add('hidden');
         }
         
         // Display summary cards

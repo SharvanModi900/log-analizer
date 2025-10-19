@@ -220,46 +220,35 @@ ipcMain.handle('select-files', async () => {
   Logger.log(`Files selected: ${result.filePaths.length} files`);
   
   // Process selected files and update uploadedFiles (allow partial selection)
-  const newFiles = {
-    jsonPath: null,
-    baseLogPath: null,
-    beforeLogPath: null,
-    afterLogPath: null
-  };
-  
   for (const filePath of result.filePaths) {
     const fileName = path.basename(filePath).toLowerCase();
     Logger.log(`Processing file: ${fileName}`);
     
     if (fileName.endsWith('.json')) {
-      newFiles.jsonPath = filePath;
       uploadedFiles.jsonPath = filePath;
       Logger.log(`Identified JSON file: ${filePath}`);
     } else if (fileName.endsWith('_base.log')) {
-      newFiles.baseLogPath = filePath;
       uploadedFiles.baseLogPath = filePath;
       Logger.log(`Identified Base Log file: ${filePath}`);
     } else if (fileName.endsWith('_before.log')) {
-      newFiles.beforeLogPath = filePath;
       uploadedFiles.beforeLogPath = filePath;
       Logger.log(`Identified Before Log file: ${filePath}`);
     } else if (fileName.endsWith('_after.log')) {
-      newFiles.afterLogPath = filePath;
       uploadedFiles.afterLogPath = filePath;
       Logger.log(`Identified After Log file: ${filePath}`);
     }
   }
   
   // Return the newly selected files (not requiring all files to be present)
-  Logger.log(`File selection processed. JSON: ${!!newFiles.jsonPath}, Base: ${!!newFiles.baseLogPath}, Before: ${!!newFiles.beforeLogPath}, After: ${!!newFiles.afterLogPath}`);
+  Logger.log(`File selection processed. JSON: ${!!uploadedFiles.jsonPath}, Base: ${!!uploadedFiles.baseLogPath}, Before: ${!!uploadedFiles.beforeLogPath}, After: ${!!uploadedFiles.afterLogPath}`);
   
   return { 
     success: true, 
     files: {
-      json: newFiles.jsonPath,
-      base: newFiles.baseLogPath,
-      before: newFiles.beforeLogPath,
-      after: newFiles.afterLogPath
+      json: uploadedFiles.jsonPath,
+      base: uploadedFiles.baseLogPath,
+      before: uploadedFiles.beforeLogPath,
+      after: uploadedFiles.afterLogPath
     }
   };
 });
@@ -277,7 +266,7 @@ ipcMain.handle('reset-files', async () => {
 });
 
 // Handle analysis
-ipcMain.handle('analyze-files', async () => {
+ipcMain.handle('analyze-files', async (event, language) => {
   Logger.log('Handling file analysis request');
   if (!uploadedFiles.jsonPath) {
     Logger.warn('Analysis requested without JSON file');
@@ -327,7 +316,9 @@ ipcMain.handle('analyze-files', async () => {
   
   try {
     Logger.log('Starting log analysis');
-    const analysisResult = await analyzeLogs(uploadedFiles);
+    // Default to 'rust' if no language is specified
+    const languageToUse = language || 'rust';
+    const analysisResult = await analyzeLogs(uploadedFiles, languageToUse);
     // Reset file paths after analysis
     Logger.log('Analysis completed, resetting file paths');
     uploadedFiles = {
@@ -344,7 +335,7 @@ ipcMain.handle('analyze-files', async () => {
 });
 
 // Function to analyze logs from individual files
-async function analyzeLogs(files) {
+async function analyzeLogs(files, language = 'rust') {
   Logger.log(`Analyzing logs from individual files`);
   return new Promise((resolve, reject) => {
     try {
@@ -384,8 +375,8 @@ async function analyzeLogs(files) {
 
       // Run the Python analysis script
       const pythonScript = path.join(__dirname, 'log_analyzer.py');
-      Logger.log(`Running Python script: ${pythonScript} with directory: ${tempDir}`);
-      const pythonProcess = spawn('python', [pythonScript, tempDir]);
+      Logger.log(`Running Python script: ${pythonScript} with directory: ${tempDir} and language: ${language}`);
+      const pythonProcess = spawn('python', [pythonScript, tempDir, language]);
 
       let stdout = '';
       let stderr = '';
