@@ -1272,13 +1272,19 @@
                                 <h3 class="upload-title">Upload Test Files</h3>
                                 <p class="upload-desc">Drag and drop your files here</p>
                                 <p class="upload-desc">Required files: JSON, _base.log, _before.log, _after.log</p>
+                                <p class="upload-desc">Or upload a ZIP folder containing these files</p>
                                 
                                 <!-- Hidden file input for accessibility -->
-                                <input type="file" id="fileInput" multiple class="hidden" accept=".json,.log">
+                                <input type="file" id="fileInput" multiple class="hidden" accept=".json,.log,.zip">
                                 
                                 <div class="flex flex-col items-center gap-4 mt-6">
                                     <button class="btn btn-primary" id="uploadFilesBtn">
                                         <i class="fas fa-folder-open mr-2"></i> Browse Files
+                                    </button>
+                                    
+                                    <!-- Add ZIP upload button -->
+                                    <button class="btn btn-secondary" id="uploadZipBtn">
+                                        <i class="fas fa-file-archive mr-2"></i> Upload ZIP Folder
                                     </button>
                                     
                                     <div class="file-info" id="filesInfo">
@@ -1293,7 +1299,7 @@
                                 </div>
                                 
                                 <div class="mt-6 text-sm text-gray-400">
-                                    <p><i class="fas fa-lightbulb mr-2"></i>Tip: You can select multiple files at once</p>
+                                    <p><i class="fas fa-lightbulb mr-2"></i>Tip: You can select multiple files at once or upload a ZIP folder</p>
                                 </div>
                             </div>
                         </div>

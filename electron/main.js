@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, dialog, nativeImage, Menu, screen } = requi
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
+const AdmZip = require('adm-zip'); // Add ZIP handling
 
 // Set the app icon as early as possible
 if (process.platform === 'win32') {
@@ -253,6 +254,154 @@ ipcMain.handle('select-files', async () => {
   };
 });
 
+// Handle ZIP file selection and extraction
+ipcMain.handle('select-zip', async (event, zipPath = null) => {
+  Logger.log('Handling ZIP file selection');
+  
+  let selectedZipPath = zipPath;
+  
+  // If no zipPath provided, show file dialog
+  if (!selectedZipPath) {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [
+        { name: 'ZIP Files', extensions: ['zip'] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    });
+    
+    if (result.canceled) {
+      Logger.warn('ZIP selection cancelled by user');
+      return { success: false, error: 'User cancelled ZIP selection' };
+    }
+    
+    selectedZipPath = result.filePaths[0];
+  }
+  
+  Logger.log(`Processing ZIP file: ${selectedZipPath}`);
+  
+  try {
+    // Verify the file exists and is a ZIP file
+    if (!fs.existsSync(selectedZipPath)) {
+      return { success: false, error: 'ZIP file not found' };
+    }
+    
+    if (!selectedZipPath.toLowerCase().endsWith('.zip')) {
+      return { success: false, error: 'Selected file is not a ZIP file' };
+    }
+    
+    // Create a temporary directory for extraction
+    const tempDir = path.join(app.getPath('temp'), 'log-analyzer-zip-' + Date.now());
+    Logger.log(`Creating temporary directory for ZIP extraction: ${tempDir}`);
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+    
+    // Extract the ZIP file
+    Logger.log('Extracting ZIP file');
+    const zip = new AdmZip(selectedZipPath);
+    zip.extractAllTo(tempDir, true); // true to overwrite existing files
+    
+    // Find the required files in the extracted directory
+    const extractedFiles = findRequiredFiles(tempDir);
+    
+    if (!extractedFiles.json || !extractedFiles.base || !extractedFiles.before || !extractedFiles.after) {
+      Logger.warn('Not all required files found in ZIP');
+      // Clean up temporary directory
+      try {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      } catch (err) {
+        Logger.warn(`Could not clean up temporary directory: ${err}`);
+      }
+      return { success: false, error: 'ZIP file must contain all required files: JSON, _base.log, _before.log, _after.log' };
+    }
+    
+    // Update uploadedFiles with the extracted file paths
+    uploadedFiles.jsonPath = extractedFiles.json;
+    uploadedFiles.baseLogPath = extractedFiles.base;
+    uploadedFiles.beforeLogPath = extractedFiles.before;
+    uploadedFiles.afterLogPath = extractedFiles.after;
+    
+    Logger.log(`ZIP extraction completed. JSON: ${!!uploadedFiles.jsonPath}, Base: ${!!uploadedFiles.baseLogPath}, Before: ${!!uploadedFiles.beforeLogPath}, After: ${!!uploadedFiles.afterLogPath}`);
+    
+    // Return information about the extracted files
+    return { 
+      success: true, 
+      message: 'ZIP file processed successfully',
+      files: {
+        json: {
+          name: path.basename(extractedFiles.json),
+          path: extractedFiles.json,
+          size: fs.statSync(extractedFiles.json).size
+        },
+        base: {
+          name: path.basename(extractedFiles.base),
+          path: extractedFiles.base,
+          size: fs.statSync(extractedFiles.base).size
+        },
+        before: {
+          name: path.basename(extractedFiles.before),
+          path: extractedFiles.before,
+          size: fs.statSync(extractedFiles.before).size
+        },
+        after: {
+          name: path.basename(extractedFiles.after),
+          path: extractedFiles.after,
+          size: fs.statSync(extractedFiles.after).size
+        }
+      }
+    };
+  } catch (error) {
+    Logger.error(`Error processing ZIP file: ${error.message}`);
+    return { success: false, error: `Failed to process ZIP file: ${error.message}` };
+  }
+});
+
+// Helper function to find required files in a directory
+function findRequiredFiles(directory) {
+  const result = {
+    json: null,
+    base: null,
+    before: null,
+    after: null
+  };
+  
+  function searchDirectory(dir) {
+    const files = fs.readdirSync(dir);
+    
+    for (const file of files) {
+      const fullPath = path.join(dir, file);
+      const stat = fs.statSync(fullPath);
+      
+      if (stat.isDirectory()) {
+        // Recursively search subdirectories
+        const subResult = searchDirectory(fullPath);
+        if (subResult.json) result.json = subResult.json;
+        if (subResult.base) result.base = subResult.base;
+        if (subResult.before) result.before = subResult.before;
+        if (subResult.after) result.after = subResult.after;
+      } else if (stat.isFile()) {
+        const fileName = path.basename(file).toLowerCase();
+        
+        // Check if this is one of the required files
+        if (fileName.endsWith('.json') && !result.json) {
+          result.json = fullPath;
+        } else if (fileName.endsWith('_base.log') && !result.base) {
+          result.base = fullPath;
+        } else if (fileName.endsWith('_before.log') && !result.before) {
+          result.before = fullPath;
+        } else if (fileName.endsWith('_after.log') && !result.after) {
+          result.after = fullPath;
+        }
+      }
+    }
+    
+    return result;
+  }
+  
+  return searchDirectory(directory);
+}
+
 // Handle resetting file selection
 ipcMain.handle('reset-files', async () => {
   Logger.log('Resetting file selection');
@@ -339,39 +488,55 @@ async function analyzeLogs(files, language = 'rust') {
   Logger.log(`Analyzing logs from individual files`);
   return new Promise((resolve, reject) => {
     try {
-      // Create a temporary directory for extraction
-      const tempDir = path.join(app.getPath('temp'), 'log-analyzer-' + Date.now());
-      Logger.log(`Creating temporary directory: ${tempDir}`);
-      if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true });
-      }
-
-      // Create a logs subdirectory
-      const logsDir = path.join(tempDir, 'logs');
-      Logger.log(`Creating logs directory: ${logsDir}`);
-      if (!fs.existsSync(logsDir)) {
-        fs.mkdirSync(logsDir, { recursive: true });
-      }
-
-      // Copy the JSON file to the logs directory
-      const jsonFileName = path.basename(files.jsonPath);
-      const destJsonPath = path.join(logsDir, jsonFileName);
-      Logger.log(`Copying JSON file from ${files.jsonPath} to ${destJsonPath}`);
-      fs.copyFileSync(files.jsonPath, destJsonPath);
-
-      // Copy the log files to the logs directory with appropriate names
-      const baseLogFileName = path.basename(files.baseLogPath);
-      const beforeLogFileName = path.basename(files.beforeLogPath);
-      const afterLogFileName = path.basename(files.afterLogPath);
+      // Check if files are already in a proper directory structure (from ZIP extraction)
+      // If the JSON file is in a logs directory, we can use that directly
+      const jsonDir = path.dirname(files.jsonPath);
+      const logsDir = path.basename(jsonDir) === 'logs' ? jsonDir : null;
       
-      const destBaseLogPath = path.join(logsDir, baseLogFileName);
-      const destBeforeLogPath = path.join(logsDir, beforeLogFileName);
-      const destAfterLogPath = path.join(logsDir, afterLogFileName);
+      let tempDir = null;
       
-      Logger.log(`Copying log files to logs directory`);
-      fs.copyFileSync(files.baseLogPath, destBaseLogPath);
-      fs.copyFileSync(files.beforeLogPath, destBeforeLogPath);
-      fs.copyFileSync(files.afterLogPath, destAfterLogPath);
+      if (logsDir && 
+          fs.existsSync(path.join(logsDir, path.basename(files.baseLogPath))) &&
+          fs.existsSync(path.join(logsDir, path.basename(files.beforeLogPath))) &&
+          fs.existsSync(path.join(logsDir, path.basename(files.afterLogPath)))) {
+        // Files are already in the correct structure, use the existing directory
+        Logger.log(`Files are already in correct structure, using directory: ${path.dirname(logsDir)}`);
+        tempDir = path.dirname(logsDir);
+      } else {
+        // Create a temporary directory for extraction
+        tempDir = path.join(app.getPath('temp'), 'log-analyzer-' + Date.now());
+        Logger.log(`Creating temporary directory: ${tempDir}`);
+        if (!fs.existsSync(tempDir)) {
+          fs.mkdirSync(tempDir, { recursive: true });
+        }
+
+        // Create a logs subdirectory
+        const logsDir = path.join(tempDir, 'logs');
+        Logger.log(`Creating logs directory: ${logsDir}`);
+        if (!fs.existsSync(logsDir)) {
+          fs.mkdirSync(logsDir, { recursive: true });
+        }
+
+        // Copy the JSON file to the logs directory
+        const jsonFileName = path.basename(files.jsonPath);
+        const destJsonPath = path.join(logsDir, jsonFileName);
+        Logger.log(`Copying JSON file from ${files.jsonPath} to ${destJsonPath}`);
+        fs.copyFileSync(files.jsonPath, destJsonPath);
+
+        // Copy the log files to the logs directory with appropriate names
+        const baseLogFileName = path.basename(files.baseLogPath);
+        const beforeLogFileName = path.basename(files.beforeLogPath);
+        const afterLogFileName = path.basename(files.afterLogPath);
+        
+        const destBaseLogPath = path.join(logsDir, baseLogFileName);
+        const destBeforeLogPath = path.join(logsDir, beforeLogFileName);
+        const destAfterLogPath = path.join(logsDir, afterLogFileName);
+        
+        Logger.log(`Copying log files to logs directory`);
+        fs.copyFileSync(files.baseLogPath, destBaseLogPath);
+        fs.copyFileSync(files.beforeLogPath, destBeforeLogPath);
+        fs.copyFileSync(files.afterLogPath, destAfterLogPath);
+      }
 
       // Run the Python analysis script
       const pythonScript = path.join(__dirname, 'log_analyzer.py');
@@ -393,12 +558,14 @@ async function analyzeLogs(files, language = 'rust') {
 
       pythonProcess.on('close', (code) => {
         Logger.log(`Python process exited with code: ${code}`);
-        // Clean up temporary files
-        try {
-          Logger.log(`Cleaning up temporary directory: ${tempDir}`);
-          fs.rmSync(tempDir, { recursive: true, force: true });
-        } catch (err) {
-          Logger.warn(`Could not clean up temporary directory: ${err}`);
+        // Clean up temporary files (but not if they were from ZIP extraction)
+        if (!logsDir) {
+          try {
+            Logger.log(`Cleaning up temporary directory: ${tempDir}`);
+            fs.rmSync(tempDir, { recursive: true, force: true });
+          } catch (err) {
+            Logger.warn(`Could not clean up temporary directory: ${err}`);
+          }
         }
 
         if (code !== 0) {

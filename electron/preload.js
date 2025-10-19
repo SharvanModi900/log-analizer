@@ -6,6 +6,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 // and node integration
 contextBridge.exposeInMainWorld('electronAPI', {
   selectFiles: () => ipcRenderer.invoke('select-files'),
+  selectZip: (zipPath) => ipcRenderer.invoke('select-zip', zipPath), // Add ZIP selection with path parameter
   analyzeFiles: (language) => ipcRenderer.invoke('analyze-files', language),
   resetFiles: () => ipcRenderer.invoke('reset-files')
 });
